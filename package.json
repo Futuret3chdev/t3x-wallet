@@ -1,0 +1,26 @@
+{
+  "name": "t3x-wallet",
+  "private": true,
+  "version": "0.1.0",
+  "description": "T3X Wallet — production clone of Infinite Wallet with native T3X staking and minting. Presented by Futuret3Ch.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@solana/spl-token": "^0.4.14",
+    "@solana/web3.js": "^1.98.4",
+    "bip39": "^3.1.0",
+    "bs58": "^6.0.0",
+    "buffer": "^6.0.3",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "tweetnacl": "^1.0.3"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.0.2",
+    "vite": "^8.0.12"
+  }
+}
