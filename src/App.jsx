@@ -1041,7 +1041,7 @@ export default function MTWalletApp() {
       <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center p-4 sm:p-6 selection:bg-emerald-500 selection:text-black">
         <div className="w-full max-w-md">
           <div className="flex flex-col items-center mb-8">
-            <img src="/t3x-logo.svg" alt="T3X" className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl shadow-2xl shadow-emerald-500/30 mb-4" />
+            <img src="/t3x-coin.png" alt="T3X" className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl shadow-2xl shadow-emerald-500/30 mb-4" />
             <div className="text-3xl font-black tracking-[-1.5px]">T3X WALLET</div>
             <div className="text-emerald-400 text-sm tracking-[3px] mt-1 font-mono">T3X</div>
             <div className="text-[10px] text-zinc-500 mt-1 tracking-widest">DEVELOPED BY FUTURET3CH</div>
@@ -1318,7 +1318,7 @@ export default function MTWalletApp() {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
-                <img src="/t3x-logo.svg" alt="T3X" className="w-10 h-10 rounded-xl" />
+                <img src="/t3x-coin.png" alt="T3X" className="w-10 h-10 rounded-xl" />
               </div>
               <div>
                 <div className="font-bold tracking-tight text-xl leading-none">T3X WALLET</div>
