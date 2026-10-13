@@ -1041,7 +1041,7 @@ export default function MTWalletApp() {
       <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center p-4 sm:p-6 selection:bg-emerald-500 selection:text-black">
         <div className="w-full max-w-md">
           <div className="flex flex-col items-center mb-8">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-500 flex items-center justify-center shadow-2xl shadow-emerald-500/30 mb-4">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-500 flex items-center justify-center shadow-2xl shadow-emerald-500/30 mb-4">
               <span className="font-black text-2xl text-black tracking-[-1px]">T3X</span>
             </div>
             <div className="text-3xl font-black tracking-[-1.5px]">T3X WALLET</div>
@@ -1772,7 +1772,7 @@ export default function MTWalletApp() {
                 <div className="rounded-2xl bg-black/60 border border-zinc-900 p-4 text-xs font-mono space-y-1 text-zinc-400">
                   <div className="flex justify-between"><span>Amount</span><span>{sendAmount || '0'} $T3x</span></div>
                   <div className="flex justify-between text-emerald-400"><span>Network fee (fixed)</span><span>{currentFeeLabel}</span></div>
-                  <div className="pt-1 border-t border-zinc-900 flex justify-between font-semibold text-white"><span>Total deduction</span><span>{(parseFloat(sendAmount || 0) + MT_TX_FEE).toFixed(2)} MT</span></div>
+                  <div className="pt-1 border-t border-zinc-900 flex justify-between font-semibold text-white"><span>Total deduction</span><span>{(parseFloat(sendAmount || 0) + MT_TX_FEE).toFixed(2)} \$T3x</span></div>
                 </div>
 
                 <button disabled={sending || !sendTo || !sendAmount} type="submit" className="w-full py-4 rounded-2xl bg-emerald-500 disabled:bg-zinc-800 disabled:text-zinc-500 text-black font-bold tracking-widest text-sm mt-2 flex items-center justify-center gap-2">
