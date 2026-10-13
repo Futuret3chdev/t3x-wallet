@@ -4,6 +4,9 @@
   "version": "0.1.0",
   "description": "T3X Wallet — production clone of Infinite Wallet with native T3X staking and minting. Presented by Futuret3Ch.",
   "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
