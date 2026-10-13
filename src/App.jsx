@@ -256,7 +256,7 @@ export default function MTWalletApp() {
 
   // App state
   const [activeTab, setActiveTab] = useState('portfolio');
-  const [status, setStatus] = useState('INFINITE WALLET ready • MT-ECO SYSTEM • Self-custodial • Ultra-low fees');
+  const [status, setStatus] = useState('T3X WALLET ready • FUTURET3CH • Self-custodial • Ultra-low fees');
   const [copied, setCopied] = useState('');
 
   // Balances
@@ -273,7 +273,7 @@ export default function MTWalletApp() {
   const [sendAmount, setSendAmount] = useState('');
   const [sending, setSending] = useState(false);
 
-  // Trade / Swap states (in-wallet Jupiter swap for Solana $MT)
+  // Trade / Swap states (in-wallet Jupiter swap for Solana $T3x)
   const [swapFrom, setSwapFrom] = useState('SOL');
   const [swapTo, setSwapTo] = useState('MT');
   const [swapAmount, setSwapAmount] = useState('');
@@ -362,7 +362,7 @@ export default function MTWalletApp() {
         setMtNonce(0);
       }
 
-      // Solana $MT + SOL — secondary / for SPL holdings (e.g. the pump.fun $MT) + gas for in-wallet Jupiter swaps / future bridge
+      // Solana $T3x + SOL — secondary / for SPL holdings (e.g. the pump.fun $T3x) + gas for in-wallet Jupiter swaps / future bridge
       // Always clear short cache on manual/activate refresh so user sees fresh on-chain value (e.g. after a send to the SOL addr)
       if (currentSolAddress) {
         clearSolanaBalanceCache();
@@ -576,10 +576,10 @@ export default function MTWalletApp() {
     const tokenId = `mt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const metadata = {
       name: mintName.trim(),
-      description: mintDesignerText ? `Decorated: ${mintDesignerText}` : 'Minted via INFINITE WALLET • MT-ECO SYSTEM',
+      description: mintDesignerText ? `Decorated: ${mintDesignerText}` : 'Minted via T3X WALLET • FUTURET3CH',
       image: mintImage || '', // data URL from upload or designer canvas (base64 image)
       attributes: [
-        { trait_type: 'Origin', value: 'INFINITE WALLET' },
+        { trait_type: 'Origin', value: 'T3X WALLET' },
         mintDesignerText ? { trait_type: 'Designer Note', value: mintDesignerText } : null,
       ].filter(Boolean),
       created: new Date().toISOString(),
@@ -694,7 +694,7 @@ export default function MTWalletApp() {
       }
 
       // PRIMARY: fetch native MT balance from OUR network (mt-core /account for the MT addr)
-      // This wallet is native to MT-ECO SYSTEM — we retrieve balances from us first.
+      // This wallet is native to T3X — we retrieve balances from us first.
       const mtAddrForEntry = entry.publicKey || entry.address;
       let nativeBal = 0;
       if (mtAddrForEntry) {
@@ -1044,9 +1044,9 @@ export default function MTWalletApp() {
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-500 flex items-center justify-center shadow-2xl shadow-emerald-500/30 mb-4">
               <span className="font-black text-3xl text-black tracking-[-2px]">MT</span>
             </div>
-            <div className="text-3xl font-black tracking-[-1.5px]">INFINITE WALLET</div>
-            <div className="text-emerald-400 text-sm tracking-[3px] mt-1 font-mono">MT-ECO SYSTEM</div>
-            <div className="text-[10px] text-zinc-500 mt-1 tracking-widest">DEVELOPED BY FUTURET3CH AND MEMETORRENT</div>
+            <div className="text-3xl font-black tracking-[-1.5px]">T3X WALLET</div>
+            <div className="text-emerald-400 text-sm tracking-[3px] mt-1 font-mono">T3X</div>
+            <div className="text-[10px] text-zinc-500 mt-1 tracking-widest">DEVELOPED BY FUTURET3CH</div>
           </div>
 
           <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-8 shadow-xl">
@@ -1323,11 +1323,11 @@ export default function MTWalletApp() {
                 <span className="font-black text-lg text-black tracking-[-1.5px]">MT</span>
               </div>
               <div>
-                <div className="font-bold tracking-tight text-xl leading-none">INFINITE WALLET</div>
-                <div className="text-[10px] text-emerald-400/90 -mt-0.5 font-mono tracking-[1px]">MT-ECO SYSTEM</div>
+                <div className="font-bold tracking-tight text-xl leading-none">T3X WALLET</div>
+                <div className="text-[10px] text-emerald-400/90 -mt-0.5 font-mono tracking-[1px]">T3X</div>
               </div>
             </div>
-            <div className="ml-3 px-3 py-1 rounded-full bg-emerald-950 text-emerald-400 text-[10px] font-mono border border-emerald-900">LIVE • SELF BUILT • MT-ECO SYSTEM</div>
+            <div className="ml-3 px-3 py-1 rounded-full bg-emerald-950 text-emerald-400 text-[10px] font-mono border border-emerald-900">LIVE • SELF BUILT • T3X</div>
             {devMode && (
               <button
                 onClick={() => { setActiveTab('settings'); }}
@@ -1413,10 +1413,10 @@ export default function MTWalletApp() {
                     )}
                     <div className="uppercase tracking-[2px] text-xs text-emerald-400 font-semibold">NATIVE MT (PRIMARY — OUR NETWORK)</div>
                     <div className="mt-3 text-6xl font-black tabular-nums tracking-[-2.5px]">{mtBalance.toFixed(2)}</div>
-                    <div className="text-emerald-400 text-xl font-semibold -mt-1">$MT</div>
+                    <div className="text-emerald-400 text-xl font-semibold -mt-1">$T3x</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xs text-zinc-500">Primary $MT on the MT native chain. Send/receive here when node connected.</div>
+                    <div className="text-xs text-zinc-500">Primary $T3x on the MT native chain. Send/receive here when node connected.</div>
                     <div className="mt-6 flex gap-3">
                       <button onClick={() => { setActiveTab('send-receive'); setShowSendModal(true); }} className="px-5 py-2 bg-emerald-500 hover:bg-emerald-400 active:bg-white transition rounded-2xl text-black font-semibold text-sm flex items-center gap-2">
                         <Send className="w-4 h-4" /> SEND
@@ -1463,7 +1463,7 @@ export default function MTWalletApp() {
               <div className="space-y-5">
                 <div className="rounded-3xl bg-zinc-950 border border-zinc-800 p-6">
                   <div className="flex items-center justify-between text-xs text-zinc-400">
-                    <span>SOLANA $MT (SPL) — real token on Solana</span>
+                    <span>SOLANA $T3x (SPL) — real token on Solana</span>
                     <button 
                       onClick={async () => {
                         if (!solAddress) { setStatus('No Solana address for active wallet'); return; }
@@ -1471,9 +1471,9 @@ export default function MTWalletApp() {
                           clearSolanaBalanceCache();
                           const bal = await fetchSolanaMTBalance(solAddress);
                           setSolMTBalance(bal);
-                          setStatus(`Force synced Solana $MT (SPL): ${bal}`);
+                          setStatus(`Force synced Solana $T3x (SPL): ${bal}`);
                         } catch (err) {
-                          setStatus('Solana $MT sync failed: ' + (err.message || 'see console'));
+                          setStatus('Solana $T3x sync failed: ' + (err.message || 'see console'));
                         }
                       }}
                       className="text-[10px] underline text-emerald-300 hover:text-emerald-400"
@@ -1483,7 +1483,7 @@ export default function MTWalletApp() {
                   </div>
                   <div className="text-4xl font-semibold tabular-nums mt-1">{solMTBalance.toFixed(2)}</div>
                   <div className="text-[10px] text-emerald-400/70 mt-1">
-                    Legacy $MT on Solana (SPL). Bridge to native MT on our chain for primary holdings. Use force sync if needed.
+                    Legacy $T3x on Solana (SPL). Bridge to native MT on our chain for primary holdings. Use force sync if needed.
                   </div>
                   {getMoralisApiKey() ? (
                     <div className="mt-1 text-[10px] text-emerald-400/60">SPL balance via Moralis (reliable path).</div>
@@ -1499,7 +1499,7 @@ export default function MTWalletApp() {
 
               {/* Multi-chain / bridge stub per request - focus native, Solana for bridge, others coming */}
               <div className="mt-4 text-[10px] text-zinc-500 border border-zinc-800 rounded-2xl p-3">
-                Multi-chain view (BTC, ETH, SOL + more) + direct bridge MT-Solana ↔ Native MT coming. Hold primary $MT on our network. Current Solana SPL is legacy for bridging in.
+                Multi-chain view (BTC, ETH, SOL + more) + direct bridge MT-Solana ↔ Native MT coming. Hold primary $T3x on our network. Current Solana SPL is legacy for bridging in.
               </div>
             </div>
 
@@ -1583,7 +1583,7 @@ export default function MTWalletApp() {
                                         clearSolanaBalanceCache();
                                         const bal = await fetchSolanaMTBalance(displaySol);
                                         setSolMTBalance(bal);
-                                        setStatus(`Queried on-chain Solana $MT (SPL) for this addr: ${bal}`);
+                                        setStatus(`Queried on-chain Solana $T3x (SPL) for this addr: ${bal}`);
                                       } catch(err) {
                                         setStatus('Query failed: ' + err.message);
                                       }
@@ -1620,18 +1620,18 @@ export default function MTWalletApp() {
                   )}
                 </div>
                 <div className="text-[10px] text-zinc-500 mt-3">{isLoggedIn ? 'Backed up to your account (encrypted). Login on any device.' : 'Local only to this browser.'}</div>
-                <div className="text-[10px] text-zinc-500 mt-1">Native $MT on our chain is primary. Solana SPL is legacy/bridge only.</div>
+                <div className="text-[10px] text-zinc-500 mt-1">Native $T3x on our chain is primary. Solana SPL is legacy/bridge only.</div>
               </div>
             )}
           </div>
         )}
 
-        {/* BUY / SELL - fully in-wallet (Jupiter powered but executed inside INFINITE WALLET) */}
+        {/* BUY / SELL - fully in-wallet (Jupiter powered but executed inside T3X WALLET) */}
         {activeTab === 'trade' && (
           <div className="max-w-xl mx-auto">
             <div className="text-center mb-6">
               <div className="font-semibold text-2xl">Buy / Sell (Solana SPL leg)</div>
-              <div className="text-sm text-zinc-400 mt-1">In-wallet Jupiter for the legacy Solana $MT (SPL). Use to prepare for bridge to native MT on our chain. Primary $MT lives on the MT network.</div>
+              <div className="text-sm text-zinc-400 mt-1">In-wallet Jupiter for the legacy Solana $T3x (SPL). Use to prepare for bridge to native MT on our chain. Primary $T3x lives on the MT network.</div>
             </div>
 
             <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-6 space-y-5">
@@ -1644,7 +1644,7 @@ export default function MTWalletApp() {
                 <div className="flex gap-2">
                   <select value={swapFrom} onChange={e => { setSwapFrom(e.target.value); setSwapQuote(null); }} className="bg-black border border-zinc-700 rounded-xl px-3 py-2 text-sm">
                     <option value="SOL">SOL</option>
-                    <option value="MT">$MT (Solana)</option>
+                    <option value="MT">$T3x (Solana)</option>
                   </select>
                   <input 
                     type="number" 
@@ -1663,7 +1663,7 @@ export default function MTWalletApp() {
                 </div>
                 <div className="flex gap-2">
                   <select value={swapTo} onChange={e => { setSwapTo(e.target.value); setSwapQuote(null); }} className="bg-black border border-zinc-700 rounded-xl px-3 py-2 text-sm">
-                    <option value="MT">$MT (Solana)</option>
+                    <option value="MT">$T3x (Solana)</option>
                     <option value="SOL">SOL</option>
                   </select>
                   <div className="flex-1 bg-black border border-zinc-700 rounded-xl px-3 py-2 text-xl font-mono text-emerald-400">
@@ -1701,7 +1701,7 @@ export default function MTWalletApp() {
                       });
                       setSwapQuote(quote);
                     } catch (e) {
-                      setSwapError('Quote failed: ' + (e.message || 'check console / Solana RPC / Jupiter API status. Requires SOL for gas + some SPL $MT balance.'));
+                      setSwapError('Quote failed: ' + (e.message || 'check console / Solana RPC / Jupiter API status. Requires SOL for gas + some SPL $T3x balance.'));
                     }
                   }}
                   disabled={!swapAmount || swapping}
@@ -1737,7 +1737,7 @@ export default function MTWalletApp() {
               </div>
 
               <div className="text-[10px] text-center text-zinc-500">
-                In-wallet Jupiter swap on Solana for the SPL $MT (legacy/bridge only). Native MT on our chain is the primary asset. {wallet && getSolanaKeypair && <span className="font-mono block">Solana addr: {getSolanaKeypair(wallet)?.publicKey.toBase58().slice(0,8)}...</span>}
+                In-wallet Jupiter swap on Solana for the SPL $T3x (legacy/bridge only). Native MT on our chain is the primary asset. {wallet && getSolanaKeypair && <span className="font-mono block">Solana addr: {getSolanaKeypair(wallet)?.publicKey.toBase58().slice(0,8)}...</span>}
               </div>
             </div>
           </div>
@@ -1750,7 +1750,7 @@ export default function MTWalletApp() {
             <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-8">
               <div className="flex items-center gap-3 text-emerald-400 mb-6">
                 <ArrowUpRight className="w-5 h-5" />
-                <div className="font-semibold tracking-wide">SEND NATIVE $MT</div>
+                <div className="font-semibold tracking-wide">SEND NATIVE $T3x</div>
               </div>
 
               <form onSubmit={handleSend} className="space-y-5">
@@ -1765,7 +1765,7 @@ export default function MTWalletApp() {
                   </div>
                   <div className="relative">
                     <input type="number" step="any" value={sendAmount} onChange={(e) => setSendAmount(e.target.value)} placeholder="0.00" className="font-mono text-xl w-full bg-black border border-zinc-800 focus:border-emerald-600 rounded-2xl px-4 py-3 pr-16" required />
-                    <div className="absolute right-5 top-3.5 text-sm text-zinc-400 font-semibold">$MT</div>
+                    <div className="absolute right-5 top-3.5 text-sm text-zinc-400 font-semibold">$T3x</div>
                   </div>
                 </div>
 
@@ -1911,7 +1911,7 @@ export default function MTWalletApp() {
             <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-8">
               <div className="text-sm">Current flow (live on MT node + Solana verifier):</div>
               <ol className="list-decimal ml-5 mt-4 space-y-2 text-sm text-zinc-300">
-                <li>Hold $MT on Solana (the pump.fun token)</li>
+                <li>Hold $T3x on Solana (the pump.fun token)</li>
                 <li>Burn / send to bridge program address on Solana (we verify on-chain)</li>
                 <li>Submit proof in this wallet → native MT is minted 1:1 to your MT address</li>
               </ol>
@@ -1946,10 +1946,10 @@ export default function MTWalletApp() {
             {/* Official locked nodes - no customer-editable fields */}
             <div className="border border-zinc-800 rounded-3xl p-4 bg-zinc-950 mt-2">
               <div className="font-semibold text-sm mb-2 text-emerald-400">Node Configuration</div>
-              <div className="text-xs text-zinc-400">Connected to official MT-ECO SYSTEM nodes for primary native $MT and secure backups. Managed for reliability.</div>
+              <div className="text-xs text-zinc-400">Connected to official T3X nodes for primary native $T3x and secure backups. Managed for reliability.</div>
               <div className="mt-2 text-[10px] text-emerald-400/70">MT Node: {getMTNode()} (locked official)</div>
               <div className="text-[10px] text-emerald-400/70">Auth: {getAuthURL()} (locked official)</div>
-              <div className="mt-3 pt-3 border-t border-zinc-800 text-[10px] text-zinc-500">Developed by Futuret3ch and MemeTorrent • MT-ECO SYSTEM</div>
+              <div className="mt-3 pt-3 border-t border-zinc-800 text-[10px] text-zinc-500">Developed by Futuret3Ch • T3X</div>
             </div>
 
             {/* DEVELOPER MODE — the major self-hosted API + observability layer for the whole ecosystem */}
@@ -2001,7 +2001,7 @@ export default function MTWalletApp() {
                     <div className="flex flex-wrap gap-2">
                       <button
                         onClick={() => {
-                          const url = 'https://memetorrent-react.vercel.app/developers';
+                          const url = 'https://t3xv2.vercel.app/developers';
                           window.open(url, '_blank');
                           addDevLog('Opened full public API + MT-Connect sandbox (the /developers page with all 6 social flows + wallet deeplinks).');
                         }}
@@ -2065,7 +2065,7 @@ export default function MTWalletApp() {
                   </div>
 
                   <div className="text-[9px] text-emerald-400/70">
-                    This is the on-ramp to the full MT-ECO SYSTEM developer experience: the public /developers sandbox (social OAuth flows for FB/IG/TikTok/Snap/Google/Microsoft + wallet deeplinks), the self-hosted mt-admin-api (vitals like Vercel Speed Insights but yours, traffic, rules, webhooks stubs), mt-core, and future SDKs for iOS/Android/bots/widgets.
+                    This is the on-ramp to the full T3X developer experience: the public /developers sandbox (social OAuth flows for FB/IG/TikTok/Snap/Google/Microsoft + wallet deeplinks), the self-hosted mt-admin-api (vitals like Vercel Speed Insights but yours, traffic, rules, webhooks stubs), mt-core, and future SDKs for iOS/Android/bots/widgets.
                   </div>
                 </div>
               )}
@@ -2152,7 +2152,7 @@ export default function MTWalletApp() {
               <button 
                 onClick={() => {
                   const content = 
-`MT-ECO SYSTEM Wallet Recovery Phrase
+`T3X Wallet Recovery Phrase
 Wallet: ${revealedWalletName}
 Exported: ${new Date().toISOString().slice(0,10)}
 
@@ -2165,7 +2165,7 @@ ${revealedMnemonic}
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement('a');
                   a.href = url;
-                  a.download = `mt-eco-${revealedWalletName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-seed.txt`;
+                  a.download = `t3x-${revealedWalletName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-seed.txt`;
                   document.body.appendChild(a);
                   a.click();
                   document.body.removeChild(a);
@@ -2189,7 +2189,7 @@ ${revealedMnemonic}
       )}
 
       {/* FOOTER BAR */}
-      <div className="border-t border-zinc-800 py-3 text-center text-[10px] text-zinc-500 font-mono tracking-widest">MT-ECO SYSTEM — Developed by Futuret3ch and MemeTorrent • EVERYTHING BUILT IN-HOUSE • 1 CENT FEES • YOUR ASSETS, YOUR RULES</div>
+      <div className="border-t border-zinc-800 py-3 text-center text-[10px] text-zinc-500 font-mono tracking-widest">T3X — Developed by Futuret3Ch • EVERYTHING BUILT IN-HOUSE • 1 CENT FEES • YOUR ASSETS, YOUR RULES</div>
 
       {/* SEND MODAL */}
       <AnimatePresence>
@@ -2197,7 +2197,7 @@ ${revealedMnemonic}
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4" onClick={() => setShowSendModal(false)}>
             <motion.div initial={{ opacity: 0, scale: 0.96, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.1 }} onClick={(e) => e.stopPropagation()} className="bg-zinc-950 border border-zinc-700 w-full max-w-md rounded-3xl p-8">
               <div className="flex justify-between mb-6">
-                <div className="font-semibold">Send Native $MT</div>
+                <div className="font-semibold">Send Native $T3x</div>
                 <button onClick={() => setShowSendModal(false)}><X /></button>
               </div>
               <form onSubmit={handleSend} className="space-y-4">
@@ -2216,7 +2216,7 @@ ${revealedMnemonic}
         {showReceiveModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4" onClick={() => setShowReceiveModal(false)}>
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} onClick={e => e.stopPropagation()} className="bg-zinc-950 border border-zinc-700 rounded-3xl p-8 max-w-sm w-full text-center">
-              <div className="font-semibold mb-4">Receive $MT</div>
+              <div className="font-semibold mb-4">Receive $T3x</div>
               {qrDataUrl && <img src={qrDataUrl} className="mx-auto mb-4 rounded-2xl border border-zinc-800 p-4 bg-black" alt="QR" />}
               <div onClick={() => copy(mtAddress)} className="font-mono text-xs break-all cursor-pointer hover:text-emerald-400 active:text-white">{mtAddress}</div>
               <button onClick={() => copy(mtAddress)} className="mt-6 w-full py-3 text-sm border border-zinc-700 rounded-2xl">COPY ADDRESS</button>
@@ -2291,7 +2291,7 @@ ${revealedMnemonic}
                     ctx.textAlign = 'center';
                     ctx.fillText(text.slice(0, 20), 128, 128);
                     ctx.font = '12px monospace';
-                    ctx.fillText('MT-ECO SYSTEM', 128, 160);
+                    ctx.fillText('T3X', 128, 160);
                     setMintImage(canvas.toDataURL('image/png'));
                   }} className="px-3 py-1 text-xs border border-zinc-700 rounded">Apply Designer</button>
                 </div>
