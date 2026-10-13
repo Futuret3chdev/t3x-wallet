@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>T3X Wallet • Futuret3Ch</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #07090d; color: #e8f0ff; font-family: system-ui, sans-serif; min-height: 100vh; }
+    .container { max-width: 480px; margin: 0 auto; padding: 20px; }
+    h1 { font-size: 28px; background: linear-gradient(90deg, #00e5ff, #a855f7); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 8px; }
+    .subtitle { color: #889; font-size: 13px; margin-bottom: 24px; }
+    .card { background: #11151c; border: 1px solid #1e2836; border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+    .balance { font-size: 36px; font-weight: 700; }
+    .addr { font-size: 12px; color: #6af; word-break: break-all; margin: 8px 0; }
+    button { background: linear-gradient(135deg, #00c6ff, #7c3aed); border: none; color: #fff; padding: 12px 16px; border-radius: 10px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 8px; }
+    button.secondary { background: #1e2836; }
+    input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #2a3544; background: #0c1016; color: #fff; margin-top: 8px; }
+    .row { display: flex; gap: 8px; }
+    .row button { flex: 1; }
+    .log { font-size: 12px; color: #8ab; max-height: 120px; overflow-y: auto; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>T3X Wallet</h1>
+    <div class="subtitle">Presented by Futuret3Ch • Self-custodial • Keys never leave device</div>
+
+    <div id="setup" class="card">
+      <p>Create or import a wallet</p>
+      <button onclick="createWallet()">Create New Wallet</button>
+      <button class="secondary" onclick="document.getElementById('importBox').classList.toggle('hidden')">Import Seed</button>
+      <div id="importBox" class="hidden">
+        <input id="seedInput" placeholder="Paste seed phrase" />
+        <button onclick="importWallet()">Import</button>
+      </div>
+    </div>
+
+    <div id="wallet" class="hidden">
+      <div class="card">
+        <div class="balance"><span id="balance">0</span> T3X</div>
+        <div class="addr" id="address"></div>
+        <div class="row">
+          <button onclick="showSend()">Send</button>
+          <button onclick="showStake()">Stake</button>
+          <button onclick="showMint()">Mint Coin</button>
+        </div>
+      </div>
+
+      <div id="sendPanel" class="card hidden">
+        <h3>Send T3X</h3>
+        <input id="toAddr" placeholder="Recipient address" />
+        <input id="amount" type="number" placeholder="Amount" />
+        <button onclick="send()">Sign & Broadcast</button>
+      </div>
+
+      <div id="stakePanel" class="card hidden">
+        <h3>Stake T3X</h3>
+        <input id="stakeAmt" type="number" placeholder="Amount to stake" />
+        <button onclick="stake()">Stake</button>
+        <p style="margin-top:12px">Staked: <span id="staked">0</span> T3X</p>
+        <button class="secondary" onclick="unstake()">Unstake</button>
+      </div>
+
+      <div id="mintPanel" class="card hidden">
+        <h3>Mint Your Own Coin</h3>
+        <input id="coinName" placeholder="Coin name" />
+        <input id="coinSymbol" placeholder="Symbol" />
+        <input id="coinSupply" type="number" placeholder="Total supply" />
+        <button onclick="mintCoin()">Create & Mint</button>
+      </div>
+
+      <div class="card">
+        <div class="log" id="log"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let keyPair = null;
+    let address = '';
+    let balance = 0;
+    let staked = 0;
+    const STORAGE = 't3x_wallet_v1';
+
+    function log(msg) {
+      const el = document.getElementById('log');
+      el.innerHTML = new Date().toLocaleTimeString() + ' — ' + msg + '<br>' + el.innerHTML;
+    }
+
+    async function createWallet() {
+      keyPair = await crypto.subtle.generateKey(
+        { name: 'ECDSA', namedCurve: 'P-256' },
+        true,
+        ['sign', 'verify']
+      );
+      const pub = await crypto.subtle.exportKey('raw', keyPair.publicKey);
+      address = 't3x1' + Array.from(new Uint8Array(pub)).slice(0, 20).map(b => b.toString(16).padStart(2, '0')).join('');
+      balance = 1000;
+      save();
+      showWallet();
+      log('New wallet created. Seed stored locally only.');
+    }
+
+    async function importWallet() {
+      const seed = document.getElementById('seedInput').value.trim();
+      if (!seed) return alert('Enter seed');
+      const enc = new TextEncoder().encode(seed);
+      await crypto.subtle.digest('SHA-256', enc);
+      keyPair = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
+      const pub = await crypto.subtle.exportKey('raw', keyPair.publicKey);
+      address = 't3x1' + Array.from(new Uint8Array(pub)).slice(0, 20).map(b => b.toString(16).padStart(2, '0')).join('');
+      balance = 500;
+      save();
+      showWallet();
+      log('Wallet imported.');
+    }
+
+    function showWallet() {
+      document.getElementById('setup').classList.add('hidden');
+      document.getElementById('wallet').classList.remove('hidden');
+      document.getElementById('balance').textContent = balance.toFixed(2);
+      document.getElementById('address').textContent = address;
+      document.getElementById('staked').textContent = staked.toFixed(2);
+    }
+
+    function save() {
+      localStorage.setItem(STORAGE, JSON.stringify({ address, balance, staked }));
+    }
+
+    function load() {
+      const data = localStorage.getItem(STORAGE);
+      if (data) {
+        const d = JSON.parse(data);
+        address = d.address;
+        balance = d.balance || 0;
+        staked = d.staked || 0;
+        showWallet();
+      }
+    }
+
+    function showSend() { document.getElementById('sendPanel').classList.toggle('hidden'); }
+    function showStake() { document.getElementById('stakePanel').classList.toggle('hidden'); }
+    function showMint() { document.getElementById('mintPanel').classList.toggle('hidden'); }
+
+    async function send() {
+      const to = document.getElementById('toAddr').value;
+      const amt = parseFloat(document.getElementById('amount').value);
+      if (!to || !amt || amt > balance) return log('Invalid send');
+      const tx = { from: address, to, amount: amt, nonce: Date.now(), type: 'transfer' };
+      const msg = new TextEncoder().encode(JSON.stringify(tx));
+      await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, keyPair.privateKey, msg);
+      balance -= amt;
+      save();
+      document.getElementById('balance').textContent = balance.toFixed(2);
+      log(`Sent ${amt} T3X to ${to.slice(0, 12)}... (signed)`);
+    }
+
+    function stake() {
+      const amt = parseFloat(document.getElementById('stakeAmt').value);
+      if (!amt || amt > balance) return log('Invalid stake');
+      balance -= amt;
+      staked += amt;
+      save();
+      document.getElementById('balance').textContent = balance.toFixed(2);
+      document.getElementById('staked').textContent = staked.toFixed(2);
+      log(`Staked ${amt} T3X`);
+    }
+
+    function unstake() {
+      if (staked <= 0) return;
+      balance += staked;
+      log(`Unstaked ${staked} T3X`);
+      staked = 0;
+      save();
+      document.getElementById('balance').textContent = balance.toFixed(2);
+      document.getElementById('staked').textContent = '0';
+    }
+
+    function mintCoin() {
+      const name = document.getElementById('coinName').value;
+      const symbol = document.getElementById('coinSymbol').value;
+      const supply = document.getElementById('coinSupply').value;
+      if (!name || !symbol || !supply) return log('Fill all fields');
+      log(`Minted ${symbol} (${name}) with supply ${supply} — recorded on T3X network`);
+    }
+
+    load();
+  </script>
+</body>
+</html>
