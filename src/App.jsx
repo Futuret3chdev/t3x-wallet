@@ -338,7 +338,7 @@ export default function MTWalletApp() {
       : '';
 
     setLoadingBalances(true);
-    setStatus('Syncing native MT (our network) + Solana side...');
+    setStatus('Syncing native $T3x (our network) + Solana side...');
 
     try {
       // NATIVE MT from our chain is ALWAYS PRIMARY for this wallet (MT addr is the native identity)
@@ -374,7 +374,7 @@ export default function MTWalletApp() {
         setSolSOLBalance(ssol);
       }
 
-      setStatus('Balances synced • Native MT primary from our network');
+      setStatus('Balances synced • Native $T3x primary from our network');
     } catch (e) {
       setStatus(`Sync partial: ${e.message}`);
     } finally {
@@ -712,9 +712,9 @@ export default function MTWalletApp() {
           clearSolanaBalanceCache();
           const bal = await fetchSolanaMTBalance(entry.solanaPublicKey);
           setSolMTBalance(bal);
-          setStatus(`Activated: ${entry.name}. Native MT (our network): ${nativeBal} • Solana SPL: ${bal}`);
+          setStatus(`Activated: ${entry.name}. Native $T3x (our network): ${nativeBal} • Solana SPL: ${bal}`);
         } catch (e) { 
-          setStatus(`Activated: ${entry.name}. Native MT (our network): ${nativeBal}`);
+          setStatus(`Activated: ${entry.name}. Native $T3x (our network): ${nativeBal}`);
         }
       } else {
         setStatus(`Activated: ${entry.name}. Native MT (our network primary): ${nativeBal}`);
@@ -820,7 +820,7 @@ export default function MTWalletApp() {
       // Update the main UI balances (user is inspecting this wallet's native state)
       setMtBalance(balData.balance);
       setMtNonce(balData.nonce || 0);
-      setStatus(`Native MT from our network (${shortAddr(mtAddr)}): ${balData.balance} • (primary for this MT-native wallet)`);
+      setStatus(`Native $T3x from our network (${shortAddr(mtAddr)}): ${balData.balance} • (primary for this MT-native wallet)`);
       // If this entry matches active, also ensure active id
       if (entryId && activeWalletId !== entryId) {
         // don't auto switch, just show the native value in the cards for now
@@ -1411,12 +1411,12 @@ export default function MTWalletApp() {
                         <span className="text-xs text-zinc-400">Active: {(myWallets.find(x=>x.id===activeWalletId)?.name) || 'Wallet'}</span>
                       </div>
                     )}
-                    <div className="uppercase tracking-[2px] text-xs text-emerald-400 font-semibold">NATIVE MT (PRIMARY — OUR NETWORK)</div>
+                    <div className="uppercase tracking-[2px] text-xs text-emerald-400 font-semibold">NATIVE $T3x (PRIMARY — OUR NETWORK)</div>
                     <div className="mt-3 text-6xl font-black tabular-nums tracking-[-2.5px]">{mtBalance.toFixed(2)}</div>
                     <div className="text-emerald-400 text-xl font-semibold -mt-1">$T3x</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xs text-zinc-500">Primary $T3x on the MT native chain. Send/receive here when node connected.</div>
+                    <div className="text-xs text-zinc-500">Primary $T3x on the T3X native chain. Send/receive here when node connected.</div>
                     <div className="mt-6 flex gap-3">
                       <button onClick={() => { setActiveTab('send-receive'); setShowSendModal(true); }} className="px-5 py-2 bg-emerald-500 hover:bg-emerald-400 active:bg-white transition rounded-2xl text-black font-semibold text-sm flex items-center gap-2">
                         <Send className="w-4 h-4" /> SEND
@@ -1455,7 +1455,7 @@ export default function MTWalletApp() {
                 <div className="mt-8 pt-6 border-t border-zinc-900 text-xs flex gap-6 text-zinc-400 font-mono">
                   <div>NETWORK FEE: <span className="text-emerald-400">{currentFeeLabel}</span></div>
                   <div>NONCE: {mtNonce}</div>
-                  <div>ADDRESS (native MT): <button onClick={() => copy(mtAddress)} className="underline decoration-dotted hover:text-white">{shortAddr(mtAddress)}</button></div>
+                  <div>ADDRESS (native $T3x): <button onClick={() => copy(mtAddress)} className="underline decoration-dotted hover:text-white">{shortAddr(mtAddress)}</button></div>
                 </div>
               </div>
 
@@ -1483,7 +1483,7 @@ export default function MTWalletApp() {
                   </div>
                   <div className="text-4xl font-semibold tabular-nums mt-1">{solMTBalance.toFixed(2)}</div>
                   <div className="text-[10px] text-emerald-400/70 mt-1">
-                    Legacy $T3x on Solana (SPL). Bridge to native MT on our chain for primary holdings. Use force sync if needed.
+                    Legacy $T3x on Solana (SPL). Bridge to native $T3x on our chain for primary holdings. Use force sync if needed.
                   </div>
                   {getMoralisApiKey() ? (
                     <div className="mt-1 text-[10px] text-emerald-400/60">SPL balance via Moralis (reliable path).</div>
@@ -1770,7 +1770,7 @@ export default function MTWalletApp() {
                 </div>
 
                 <div className="rounded-2xl bg-black/60 border border-zinc-900 p-4 text-xs font-mono space-y-1 text-zinc-400">
-                  <div className="flex justify-between"><span>Amount</span><span>{sendAmount || '0'} MT</span></div>
+                  <div className="flex justify-between"><span>Amount</span><span>{sendAmount || '0'} $T3x</span></div>
                   <div className="flex justify-between text-emerald-400"><span>Network fee (fixed)</span><span>{currentFeeLabel}</span></div>
                   <div className="pt-1 border-t border-zinc-900 flex justify-between font-semibold text-white"><span>Total deduction</span><span>{(parseFloat(sendAmount || 0) + MT_TX_FEE).toFixed(2)} MT</span></div>
                 </div>
@@ -1879,7 +1879,7 @@ export default function MTWalletApp() {
         {/* ACTIVITY */}
         {activeTab === 'activity' && (
           <div>
-            <div className="font-semibold mb-4">On-Chain Activity (native MT + SPL/bridge)</div>
+            <div className="font-semibold mb-4">On-Chain Activity (native $T3x + SPL/bridge)</div>
             {txs.length === 0 ? (
               <div className="text-zinc-400 py-12 text-center border border-dashed border-zinc-800 rounded-3xl">No transactions yet. Sends, receives, NFT mints, buys/sells and bridges will appear here. Solana-side txs viewable on solscan.io.</div>
             ) : (
@@ -1891,7 +1891,7 @@ export default function MTWalletApp() {
                       <div>{shortAddr(tx.from)} → {shortAddr(tx.to)}</div>
                     </div>
                     <div className="text-right">
-                      <span className="tabular-nums">{tx.amount} MT</span>
+                      <span className="tabular-nums">{tx.amount} $T3x</span>
                       <span className="text-xs text-zinc-500 ml-2">fee {tx.fee}</span>
                     </div>
                   </div>
@@ -1913,7 +1913,7 @@ export default function MTWalletApp() {
               <ol className="list-decimal ml-5 mt-4 space-y-2 text-sm text-zinc-300">
                 <li>Hold $T3x on Solana (the pump.fun token)</li>
                 <li>Burn / send to bridge program address on Solana (we verify on-chain)</li>
-                <li>Submit proof in this wallet → native MT is minted 1:1 to your MT address</li>
+                <li>Submit proof in this wallet → native $T3x is minted 1:1 to your T3X address</li>
               </ol>
               <div className="mt-8 text-xs bg-black p-4 rounded-2xl font-mono border border-zinc-900">Solana burn verification + MT mint proof is implemented in mt-core. Full UI + two-way coming next.</div>
             </div>
@@ -2071,7 +2071,7 @@ export default function MTWalletApp() {
               )}
             </div>
 
-            <div className="text-xs text-zinc-500 pt-4">Primary holdings live on the MT native chain. Solana SPL is legacy for bridging.</div>
+            <div className="text-xs text-zinc-500 pt-4">Primary holdings live on the T3X native chain. Solana SPL is legacy for bridging.</div>
 
             {/* IMPORT FROM EXTERNAL (Phantom etc) - requested feature */}
             <div className="border border-zinc-800 rounded-3xl p-4 bg-zinc-950">
@@ -2157,7 +2157,7 @@ Wallet: ${revealedWalletName}
 Exported: ${new Date().toISOString().slice(0,10)}
 
 WARNING: This is your secret seed. Store it offline and never share it.
-Anyone with these words can access ALL funds associated with this wallet (MT native + Solana).
+Anyone with these words can access ALL funds associated with this wallet (T3X native + Solana).
 
 ${revealedMnemonic}
 `;
@@ -2298,7 +2298,7 @@ ${revealedMnemonic}
                 <div className="text-[10px] text-zinc-500 mt-1">Creates a simple decorated image data URL included in the NFT metadata.</div>
               </div>
 
-              <button disabled={minting || !mintName.trim()} onClick={handleMintNFT} className="w-full py-3 bg-emerald-500 text-black font-bold rounded-2xl text-sm tracking-wider disabled:bg-zinc-800">{minting ? 'MINTING ON MT NODE...' : 'MINT NFT (costs 0.01 MT fee)'}</button>
+              <button disabled={minting || !mintName.trim()} onClick={handleMintNFT} className="w-full py-3 bg-emerald-500 text-black font-bold rounded-2xl text-sm tracking-wider disabled:bg-zinc-800">{minting ? 'MINTING ON T3X NODE...' : 'MINT NFT (costs 0.01 $T3x fee)'}</button>
               <div className="text-center text-[10px] text-zinc-500 mt-4">Image + designer data stored on-chain with the NFT. Real native asset on the MT network.</div>
             </motion.div>
           </div>
