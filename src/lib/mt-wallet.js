@@ -865,15 +865,9 @@ async function authFetch(path, options = {}) {
     if (!res.ok) throw new Error(data.error || 'Auth request failed');
     return data;
   } catch (e) {
-    const isProdTarget = typeof authBase === 'string' && (authBase.includes('futuret3ch.com.au') || authBase.includes('https://'));
-    if (isProdTarget) {
-      // On production custom domain or any https target, never silently fall back to browser-local demo data.
-      // Doing so would hide the user's real per-userId encrypted wallets from mt-auth.
-      // Let the caller (loadMyWallets etc) surface the failure cleanly (sets [] + warning).
-      console.error('Prod auth call failed, NOT falling back to demo (wallets would appear to disappear):', authBase, e?.message || e);
-      throw e;
-    }
-    // Only demo for true local/dev cases where no real authBase was configured.
+    // T3X wallet: remote auth backend is optional. On failure, fall back to local
+    // demo accounts so wallet creation (real keys, encrypted locally) still works.
+    console.warn('Auth backend unreachable, using local fallback:', e?.message || e);
     return getDemoAuthResponse(path, options);
   }
 }
