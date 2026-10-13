@@ -1038,18 +1038,18 @@ export default function MTWalletApp() {
   // ========== LOCKED / ACCOUNT + GUEST SCREEN ==========
   if (!isLoggedIn && !isUnlocked) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center p-6 selection:bg-emerald-500 selection:text-black">
+      <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center p-4 sm:p-6 selection:bg-emerald-500 selection:text-black">
         <div className="w-full max-w-md">
           <div className="flex flex-col items-center mb-8">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-500 flex items-center justify-center shadow-2xl shadow-emerald-500/30 mb-4">
-              <span className="font-black text-3xl text-black tracking-[-2px]">MT</span>
+              <span className="font-black text-2xl text-black tracking-[-1px]">T3X</span>
             </div>
             <div className="text-3xl font-black tracking-[-1.5px]">T3X WALLET</div>
             <div className="text-emerald-400 text-sm tracking-[3px] mt-1 font-mono">T3X</div>
             <div className="text-[10px] text-zinc-500 mt-1 tracking-widest">DEVELOPED BY FUTURET3CH</div>
           </div>
 
-          <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-8 shadow-xl">
+          <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-5 sm:p-8 shadow-xl">
             {!guestMode ? (
               <>
                 {/* ACCOUNT MODE (email + phone for cross device) */}
@@ -1320,7 +1320,7 @@ export default function MTWalletApp() {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
-                <span className="font-black text-lg text-black tracking-[-1.5px]">MT</span>
+                <span className="font-black text-lg text-black tracking-[-1.5px]">T3X</span>
               </div>
               <div>
                 <div className="font-bold tracking-tight text-xl leading-none">T3X WALLET</div>
