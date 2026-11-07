@@ -1047,8 +1047,8 @@ export default function MTWalletApp() {
             <div className="text-[10px] text-zinc-500 mt-1 tracking-widest">DEVELOPED BY FUTURET3CH</div>
           </div>
 
-          <div className="relative">
-          <div inert className="pointer-events-none select-none bg-zinc-950 border border-zinc-800 rounded-3xl p-5 sm:p-8 shadow-xl opacity-40">
+          <div className="relative overflow-hidden rounded-3xl">
+            <div inert className="pointer-events-none select-none bg-zinc-950 border border-zinc-800 rounded-3xl p-5 sm:p-8 shadow-xl">
             {!guestMode ? (
               <>
                 {/* ACCOUNT MODE (email + phone for cross device) */}
@@ -1243,14 +1243,21 @@ export default function MTWalletApp() {
                 </div>
               </>
             )}
-          </div>
-          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-3xl border border-emerald-900/70 bg-[#0a0a0a]/92 p-6 text-center shadow-2xl">
-            <div className="max-w-xs">
-              <p className="font-mono text-[11px] tracking-[0.28em] text-emerald-400">COMING SOON</p>
-              <h2 className="mt-3 text-2xl font-black tracking-tight">Sign-in isn't open yet</h2>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-400">Accounts, social login, and guest wallets stay locked until the vault is ready. There is nothing to enter for now.</p>
             </div>
-          </div>
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/35 px-6 text-center backdrop-blur-[1px]">
+              <div className="max-w-xs rounded-3xl bg-black/55 px-5 py-6">
+                <div
+                  className="text-3xl sm:text-4xl font-black tracking-[0.16em] text-transparent"
+                  style={{ WebkitTextStroke: '1.5px rgba(255,255,255,0.92)' }}
+                >
+                  COMING SOON
+                </div>
+                <div className="mt-4 text-base font-semibold text-white/90">Sign-in isn't open yet</div>
+                <p className="mt-2 text-sm leading-relaxed text-white/75">
+                  Accounts, social login, and guest wallets stay locked until the vault is ready. There is nothing to enter for now.
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="text-center mt-6 text-[10px] text-zinc-500 font-mono tracking-widest">NO THIRD PARTIES • KEYS STAY LOCAL OR ENCRYPTED ON OUR SERVERS</div>
