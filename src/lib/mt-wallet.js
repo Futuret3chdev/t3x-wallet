@@ -1,5 +1,5 @@
 /**
- * INFINITE WALLET - Secure client-side wallet engine for MT-ECO SYSTEM (developed by Futuret3ch and MemeTorrent)
+ * INFINITE WALLET - Secure client-side wallet engine for T3x-ECO SYSTEM (developed by Futuret3ch)
  * - Zero third-party auth (local only)
  * - Keys NEVER leave the browser
  * - Compatible with mt-core (ed25519 + tweetnacl + bs58 + JSON tx)
@@ -12,7 +12,7 @@ import nacl from 'tweetnacl';
 import bs58 from 'bs58';
 import { Buffer } from 'buffer';
 
-// MT Node (local dev by default - later configurable / prod endpoint)
+// T3x Node (local dev by default - later configurable / prod endpoint)
 // On Vercel/live we default to null (no public node), but user can set a custom one in Settings
 // (e.g. their deployed mt-core on Render/Railway, or localhost when testing locally).
 // NOTE: always use getMTNode() at call time so custom settings + VITE_MT_NODE_URL apply without reload.
@@ -58,7 +58,7 @@ export function getMTNode() {
   if (fromEnv) {
     if (fromEnv.startsWith('/')) return fromEnv; // relative base like /api/mt
     if (/^https?:\/\//i.test(fromEnv)) {
-      // Safety: never let MT node point at the auth subdomain (common misconfig of VITE vars)
+      // Safety: never let T3x node point at the auth subdomain (common misconfig of VITE vars)
       if (fromEnv.includes('auth.futuret3ch.com.au')) {
         console.error('[mt-wallet] VITE_MT_NODE_URL is pointing at auth subdomain! Forcing correct api. Fix your Vercel env var.');
         return 'https://api.futuret3ch.com.au';
@@ -115,7 +115,7 @@ export function getAuthURL() {
   if (fromEnv) {
     if (fromEnv.startsWith('/')) return fromEnv;
     if (/^https?:\/\//i.test(fromEnv)) {
-      // Safety: never let auth URL point at the api (MT) subdomain
+      // Safety: never let auth URL point at the api (T3x) subdomain
       if (fromEnv.includes('api.futuret3ch.com.au')) {
         console.error('[mt-wallet] VITE_AUTH_URL is pointing at api subdomain! Forcing correct auth. Fix your Vercel env var.');
         return 'https://auth.futuret3ch.com.au';
@@ -163,7 +163,7 @@ export const AUTH_URL = getAuthURL();
 // Fixed ultra-low fee (marketed as ~1 cent SOL equivalent)
 export const MT_TX_FEE = 0.01;
 
-// Derive MT keypair from 32-byte seed (mnemonic -> seed[0:32])
+// Derive T3x keypair from 32-byte seed (mnemonic -> seed[0:32])
 export function deriveMTKeypairFromSeed(seed) {
   const secretKey = seed.slice(0, 32);
   const keypair = nacl.sign.keyPair.fromSeed(secretKey);
@@ -316,7 +316,7 @@ export function deleteVault() {
 }
 
 /**
- * Node API helpers (MT native chain)
+ * Node API helpers (T3x native chain)
  */
 export async function fetchMTBalance(address) {
   let node = getMTNode();
@@ -329,7 +329,7 @@ export async function fetchMTBalance(address) {
     const data = await res.json();
     return { balance: Number(data.balance || 0), nonce: Number(data.nonce || 0) };
   } catch (e) {
-    console.warn('MT node unavailable, using 0', e);
+    console.warn('T3x node unavailable, using 0', e);
     return { balance: 0, nonce: 0 };
   }
 }
@@ -361,11 +361,11 @@ export async function fetchMTTxs(address) {
 }
 
 /**
- * Submit signed MT transaction
+ * Submit signed T3x transaction
  */
 export async function submitMTTx(unsignedTx, signature) {
   let node = getMTNode();
-  if (!node) throw new Error('Native MT node not configured (demo mode)');
+  if (!node) throw new Error('Native T3x node not configured (demo mode)');
   node = node.replace(/\.+$/, '').replace(/\/+$/, '');
   const body = { ...unsignedTx, signature };
   const res = await fetch(`${node}/tx`, {
@@ -386,7 +386,7 @@ export async function submitMTTx(unsignedTx, signature) {
       (res.status === 413
         ? `Payload too large (413). The NFT metadata (especially the image data URL) is too big for the server limit. Use a smaller image (the designer produces tiny ones; uploads limited to ~500KB in UI). Or increase client_max_body_size in nginx and bodyParser limit in mt-core.`
         : (trimmed.startsWith('<!') || trimmed.startsWith('<html')
-            ? `server at ${node} returned HTML (status ${res.status}) instead of JSON. This usually means the fetch URL resolved to the wallet frontend (SPA catch-all) or a misconfigured proxy instead of the MT core API. Check: 1) VITE_MT_NODE_URL in Vercel is set to https://api.futuret3ch.com.au (or /api/mt), 2) curl -v https://api.futuret3ch.com.au/tx or /health returns JSON (not 403/404/HTML), 3) nginx on VPS has active api.futuret3ch.com.au block proxying to correct mt-core port.`
+            ? `server at ${node} returned HTML (status ${res.status}) instead of JSON. This usually means the fetch URL resolved to the wallet frontend (SPA catch-all) or a misconfigured proxy instead of the T3x core API. Check: 1) VITE_MT_NODE_URL in Vercel is set to https://api.futuret3ch.com.au (or /api/mt), 2) curl -v https://api.futuret3ch.com.au/tx or /health returns JSON (not 403/404/HTML), 3) nginx on VPS has active api.futuret3ch.com.au block proxying to correct mt-core port.`
             : (text || 'Transaction failed')));
     throw new Error(errDetail);
   }
@@ -394,13 +394,13 @@ export async function submitMTTx(unsignedTx, signature) {
 }
 
 /**
- * Request test MT from the configured node faucet (your own node).
- * Gives the wallet 1000 MT instantly so you can test sends, NFT mints, etc.
+ * Request test T3x from the configured node faucet (your own node).
+ * Gives the wallet 1000 T3x instantly so you can test sends, NFT mints, etc.
  */
 export async function requestTestFunds(address) {
   if (!address) throw new Error('No address');
   let node = getMTNode();
-  if (!node) throw new Error('Faucet only available when a MT node is configured in Settings');
+  if (!node) throw new Error('Faucet only available when a T3x node is configured in Settings');
   node = node.replace(/\.+$/, '').replace(/\/+$/, '');
   const res = await fetch(`${node}/faucet`, {
     method: 'POST',
@@ -417,7 +417,7 @@ export async function requestTestFunds(address) {
   if (!res.ok || (json && json.error)) {
     const errDetail = (json && json.error) ||
       (trimmed.startsWith('<!') || trimmed.startsWith('<html')
-        ? `server at ${node} returned HTML (status ${res.status}) instead of JSON (faucet). Check VITE_MT_NODE_URL and that the MT API host serves JSON (see submitMTTx for debug steps).`
+        ? `server at ${node} returned HTML (status ${res.status}) instead of JSON (faucet). Check VITE_MT_NODE_URL and that the T3x API host serves JSON (see submitMTTx for debug steps).`
         : (text || 'Faucet request failed'));
     throw new Error(errDetail);
   }
@@ -450,7 +450,7 @@ export async function sendMT(fromWallet, toAddress, amount, currentNonce) {
 }
 
 /**
- * Solana $MT (SPL) helpers - for current holdings + future bridge
+ * Solana $T3X (SPL) helpers - for current holdings + future bridge
  */
 import { 
   Connection, PublicKey, LAMPORTS_PER_SOL, Keypair, 
@@ -458,7 +458,7 @@ import {
 } from '@solana/web3.js';
 import { getAssociatedTokenAddress, getAccount } from '@solana/spl-token';
 
-// Prioritized Solana mainnet RPCs for reliable $MT (SPL) and SOL balance reads + swaps.
+// Prioritized Solana mainnet RPCs for reliable $T3X (SPL) and SOL balance reads + swaps.
 // Exactly the ones the user provided (Helius first, then QuickNode, then public mainnet).
 // Custom RPC in Settings (or VITE_SOLANA_RPC_URL build-time default) overrides the entire list.
 // We intentionally avoid flaky public endpoints that can return ERR_CERT_AUTHORITY_INVALID.
@@ -555,7 +555,7 @@ export function setCustomSolanaRpc(url) {
   _currentRpcIndex = 0;
 }
 
-// Moralis integration for reliable Solana $MT balances and price (user's bot key works well)
+// Moralis integration for reliable Solana $T3X balances and price (user's bot key works well)
 // 
 // The key can be provided in two ways:
 // 1. Build-time (recommended for live public site): set VITE_MORALIS_API_KEY env var on your hosting platform (Vercel etc).
@@ -573,7 +573,7 @@ export function getDefaultMoralisApiKey() {
       if (fromEnv) return fromEnv;
     }
   } catch (_) {}
-  // Hardcoded fallback using the user's working key so the live demo site always has reliable $MT SPL balance
+  // Hardcoded fallback using the user's working key so the live demo site always has reliable $T3X SPL balance
   // (same key that makes the game display work). This is public in the bundle for demo purposes.
   return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6Ijg0NGJkOGI0LTUxNzItNDkxNy05ZjY1LTkwMzUzOTQ3OWYwZiIsIm9yZ0lkIjoiNDY0NjAwIiwidXNlcklkIjoiNDc3OTc2IiwidHlwZUlkIjoiZGUyM2Y5NWYtMTgzOS00N2M2LTg0ZWEtNzUxMDM3YmYxMjMyIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3NTQ5Mzc4MzUsImV4cCI6NDkxMDY5NzgzNX0.ALS9nRVEt8sI2WWiSnSf7aj63McPfxDSTnrJXPEcS_A";
 }
@@ -709,7 +709,7 @@ export async function fetchSolanaMTBalance(solanaPublicKeyStr) {
         const last = _lastWarnTime.get(solanaPublicKeyStr) || 0;
         if (now - last > WARN_COOLDOWN_MS) {
           _lastWarnTime.set(solanaPublicKeyStr, now);
-          console.warn('Solana $MT balance fetch failed for', solanaPublicKeyStr, e2.message || e.message);
+          console.warn('Solana $T3X balance fetch failed for', solanaPublicKeyStr, e2.message || e.message);
         }
       }
     }
@@ -747,7 +747,7 @@ export async function fetchSolanaSOLBalance(solanaPublicKeyStr) {
   return 0;
 }
 
-// Derive Solana Keypair (and address) from the same seed used for MT
+// Derive Solana Keypair (and address) from the same seed used for T3x
 export function deriveSolanaKeypairFromSeed(seed32) {
   const kp = Keypair.fromSeed(seed32);
   return {
@@ -1010,8 +1010,8 @@ export async function createNewWalletForAccount(name = 'Main Wallet', password, 
   const entry = {
     id: 'w_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8),
     name,
-    publicKey: w.publicKey,           // MT native address
-    solanaPublicKey,                  // Solana address for real $MT / SOL
+    publicKey: w.publicKey,           // T3x native address
+    solanaPublicKey,                  // Solana address for real $T3X / SOL
     createdAt: Date.now(),
   };
 
@@ -1020,8 +1020,8 @@ export async function createNewWalletForAccount(name = 'Main Wallet', password, 
       const backupRes = await backupWallet({
         name,
         encryptedData: encryptedPayload,
-        address: w.publicKey,  // MT address
-        solanaPublicKey,       // important for real $MT balance display and queries
+        address: w.publicKey,  // T3x address
+        solanaPublicKey,       // important for real $T3X balance display and queries
         color: '#10b981'
       });
       if (backupRes && backupRes.wallet && backupRes.wallet.id) {
@@ -1056,7 +1056,7 @@ export async function importWalletAsEntry(mnemonic, name = 'Imported Wallet', pa
 }
 
 /**
- * Solana $MT Buy/Sell using Jupiter (executed inside the wallet)
+ * Solana $T3X Buy/Sell using Jupiter (executed inside the wallet)
  * We use Jupiter API for quotes and tx construction, but signing and sending
  * happens 100% inside this wallet with the user's Solana keypair.
  * This keeps the UX "within the wallet" without redirecting the user.

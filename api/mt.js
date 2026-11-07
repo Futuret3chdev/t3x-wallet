@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     });
     res.send(data);
   } catch (e) {
-    console.error('MT core proxy error:', e);
-    res.status(502).json({ error: 'MT node proxy failed: ' + e.message });
+    console.error('T3x core proxy error:', e);
+    res.status(502).json({ error: 'T3x node proxy failed: ' + e.message });
   }
 }
