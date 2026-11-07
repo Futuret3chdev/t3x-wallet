@@ -1047,7 +1047,8 @@ export default function MTWalletApp() {
             <div className="text-[10px] text-zinc-500 mt-1 tracking-widest">DEVELOPED BY FUTURET3CH</div>
           </div>
 
-          <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-5 sm:p-8 shadow-xl">
+          <div className="relative">
+          <div inert className="pointer-events-none select-none bg-zinc-950 border border-zinc-800 rounded-3xl p-5 sm:p-8 shadow-xl opacity-40">
             {!guestMode ? (
               <>
                 {/* ACCOUNT MODE (email + phone for cross device) */}
@@ -1243,6 +1244,14 @@ export default function MTWalletApp() {
               </>
             )}
           </div>
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-3xl border border-emerald-900/70 bg-[#0a0a0a]/92 p-6 text-center shadow-2xl">
+            <div className="max-w-xs">
+              <p className="font-mono text-[11px] tracking-[0.28em] text-emerald-400">COMING SOON</p>
+              <h2 className="mt-3 text-2xl font-black tracking-tight">Sign-in isn't open yet</h2>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-400">Accounts, social login, and guest wallets stay locked until the vault is ready. There is nothing to enter for now.</p>
+            </div>
+          </div>
+          </div>
 
           <div className="text-center mt-6 text-[10px] text-zinc-500 font-mono tracking-widest">NO THIRD PARTIES • KEYS STAY LOCAL OR ENCRYPTED ON OUR SERVERS</div>
         </div>
@@ -1314,7 +1323,7 @@ export default function MTWalletApp() {
     <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col selection:bg-emerald-400 selection:text-black">
       {/* TOP NAV */}
       <nav className="border-b border-zinc-800 bg-[#0a0a0a]/95 backdrop-blur sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 min-h-16 py-2 flex items-center justify-between gap-2">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
@@ -1325,7 +1334,7 @@ export default function MTWalletApp() {
                 <div className="text-[10px] text-emerald-400/90 -mt-0.5 font-mono tracking-[1px]">T3X</div>
               </div>
             </div>
-            <div className="ml-3 px-3 py-1 rounded-full bg-emerald-950 text-emerald-400 text-[10px] font-mono border border-emerald-900">LIVE • SELF BUILT • T3X</div>
+            <div className="hidden md:block ml-3 px-3 py-1 rounded-full bg-emerald-950 text-emerald-400 text-[10px] font-mono border border-emerald-900">LIVE • SELF BUILT • T3X</div>
             {devMode && (
               <button
                 onClick={() => { setActiveTab('settings'); }}
@@ -1344,14 +1353,14 @@ export default function MTWalletApp() {
             </div>
 
             {mtAddress && (
-              <button onClick={() => copy(mtAddress, 'T3x address')} className="flex items-center gap-2 px-3 py-1.5 bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 rounded-2xl text-xs font-mono transition">
+              <button onClick={() => copy(mtAddress, 'T3x address')} className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 rounded-2xl text-xs font-mono transition">
                 {shortAddr(mtAddress)}
                 <Copy className="w-3.5 h-3.5" />
               </button>
             )}
 
-            <button onClick={handleLock} className="flex items-center gap-2 px-4 py-1.5 text-xs rounded-2xl border border-zinc-700 hover:bg-zinc-950 transition">
-              <Lock className="w-3.5 h-3.5" /> LOCK
+            <button onClick={handleLock} className="flex items-center gap-2 px-3 sm:px-4 py-1.5 text-xs rounded-2xl border border-zinc-700 hover:bg-zinc-950 transition">
+              <Lock className="w-3.5 h-3.5" /> <span className="hidden sm:inline">LOCK</span>
             </button>
 
             {isLoggedIn && (
@@ -1364,7 +1373,7 @@ export default function MTWalletApp() {
 
         {/* TAB BAR */}
         <div className="border-t border-zinc-800">
-          <div className="max-w-6xl mx-auto px-6 flex gap-1 overflow-x-auto py-2 text-sm">
+          <div className="max-w-6xl mx-auto px-3 sm:px-6 flex gap-1 overflow-x-auto py-2 text-sm">
             {TABS.map((t) => {
               const Icon = t.icon;
               const active = activeTab === t.id;
@@ -1373,7 +1382,7 @@ export default function MTWalletApp() {
                 <button
                   key={t.id}
                   onClick={() => setActiveTab(t.id)}
-                  className={`flex items-center gap-2 px-5 py-2 rounded-2xl whitespace-nowrap transition font-medium text-sm ${active ? 'bg-white text-black' : 'hover:bg-zinc-900 text-zinc-400 hover:text-white'}`}
+                  className={`flex items-center gap-2 px-3 sm:px-5 py-2 rounded-2xl whitespace-nowrap transition font-medium text-sm ${active ? 'bg-white text-black' : 'hover:bg-zinc-900 text-zinc-400 hover:text-white'}`}
                 >
                   <Icon className="w-4 h-4" /> {label}
                 </button>
@@ -1384,13 +1393,13 @@ export default function MTWalletApp() {
       </nav>
 
       {/* BODY */}
-      <div className="max-w-6xl mx-auto w-full px-6 py-8 flex-1">
+      <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 py-5 sm:py-8 flex-1">
         {/* Status bar */}
-        <div className="mb-6 flex items-center justify-between text-xs">
-          <div className="font-mono text-emerald-400/80 flex items-center gap-2">
-            <div className="w-px h-3 bg-emerald-400/40" /> {status}
+        <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-xs">
+          <div className="font-mono text-emerald-400/80 flex items-start gap-2 min-w-0">
+            <div className="w-px h-3 bg-emerald-400/40 mt-1 shrink-0" /> <span className="break-words">{status}</span>
           </div>
-          <button onClick={refreshAll} disabled={loadingBalances} className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 disabled:opacity-50 text-xs font-medium">
+          <button onClick={refreshAll} disabled={loadingBalances} className="self-start shrink-0 flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 disabled:opacity-50 text-xs font-medium">
             <RefreshCw className={`w-3.5 h-3.5 ${loadingBalances ? 'animate-spin' : ''}`} /> REFRESH ON-CHAIN
           </button>
         </div>
@@ -1400,26 +1409,26 @@ export default function MTWalletApp() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {/* T3x Native Balance - Primary */}
-              <div className="col-span-1 md:col-span-2 rounded-3xl bg-zinc-950 border border-zinc-800 p-8">
-                <div className="flex justify-between">
-                  <div>
+              <div className="col-span-1 md:col-span-2 rounded-3xl bg-zinc-950 border border-zinc-800 p-5 sm:p-8">
+                <div className="flex flex-col gap-5 sm:flex-row sm:justify-between">
+                  <div className="min-w-0">
                     {activeWalletId && (
                       <div className="flex items-center gap-2 mb-1">
                         <span className="inline-block w-2.5 h-2.5 rounded-full" style={{background: (myWallets.find(x=>x.id===activeWalletId)?.color) || '#10b981'}} />
                         <span className="text-xs text-zinc-400">Active: {(myWallets.find(x=>x.id===activeWalletId)?.name) || 'Wallet'}</span>
                       </div>
                     )}
-                    <div className="uppercase tracking-[2px] text-xs text-emerald-400 font-semibold">NATIVE $T3x (PRIMARY — OUR NETWORK)</div>
-                    <div className="mt-3 text-6xl font-black tabular-nums tracking-[-2.5px]">{mtBalance.toFixed(2)}</div>
+                    <div className="uppercase tracking-[1px] sm:tracking-[2px] text-xs text-emerald-400 font-semibold">Native $T3x · our network</div>
+                    <div className="mt-3 text-5xl sm:text-6xl font-black tabular-nums tracking-[-2px]">{mtBalance.toFixed(2)}</div>
                     <div className="text-emerald-400 text-xl font-semibold -mt-1">$T3x</div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-xs text-zinc-500">Primary $T3x on the T3X native chain. Send/receive here when node connected.</div>
-                    <div className="mt-6 flex gap-3">
-                      <button onClick={() => { setActiveTab('send-receive'); setShowSendModal(true); }} className="px-5 py-2 bg-emerald-500 hover:bg-emerald-400 active:bg-white transition rounded-2xl text-black font-semibold text-sm flex items-center gap-2">
+                  <div className="sm:text-right sm:max-w-[16rem]">
+                    <div className="text-xs text-zinc-500 leading-relaxed">Primary $T3x on the T3X native chain. Send and receive here when the node is connected.</div>
+                    <div className="mt-4 flex flex-col min-[420px]:flex-row gap-2 sm:justify-end">
+                      <button onClick={() => { setActiveTab('send-receive'); setShowSendModal(true); }} className="flex-1 sm:flex-none px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 active:bg-white transition rounded-2xl text-black font-semibold text-sm flex items-center justify-center gap-2">
                         <Send className="w-4 h-4" /> SEND
                       </button>
-                      <button onClick={() => { setActiveTab('send-receive'); setShowReceiveModal(true); }} className="px-5 py-2 border border-zinc-700 hover:bg-zinc-900 rounded-2xl text-sm flex items-center gap-2">
+                      <button onClick={() => { setActiveTab('send-receive'); setShowReceiveModal(true); }} className="flex-1 sm:flex-none px-5 py-2.5 border border-zinc-700 hover:bg-zinc-900 rounded-2xl text-sm flex items-center justify-center gap-2">
                         <QrCode className="w-4 h-4" /> RECEIVE
                       </button>
                     </div>
@@ -1450,7 +1459,7 @@ export default function MTWalletApp() {
                     )}
                   </div>
                 </div>
-                <div className="mt-8 pt-6 border-t border-zinc-900 text-xs flex gap-6 text-zinc-400 font-mono">
+                <div className="mt-6 pt-5 border-t border-zinc-900 text-xs grid grid-cols-1 sm:grid-cols-3 gap-3 text-zinc-400 font-mono">
                   <div>NETWORK FEE: <span className="text-emerald-400">{currentFeeLabel}</span></div>
                   <div>NONCE: {mtNonce}</div>
                   <div>ADDRESS (native $T3x): <button onClick={() => copy(mtAddress)} className="underline decoration-dotted hover:text-white">{shortAddr(mtAddress)}</button></div>
@@ -1459,9 +1468,9 @@ export default function MTWalletApp() {
 
               {/* Side assets - secondary to the native T3x primary card */}
               <div className="space-y-5">
-                <div className="rounded-3xl bg-zinc-950 border border-zinc-800 p-6">
-                  <div className="flex items-center justify-between text-xs text-zinc-400">
-                    <span>SOLANA $T3x (SPL) — real token on Solana</span>
+                <div className="rounded-3xl bg-zinc-950 border border-zinc-800 p-5 sm:p-6">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-xs text-zinc-400">
+                    <span className="min-w-0 leading-relaxed">Solana $T3x (SPL) — real token on Solana</span>
                     <button 
                       onClick={async () => {
                         if (!solAddress) { setStatus('No Solana address for active wallet'); return; }
@@ -1474,7 +1483,7 @@ export default function MTWalletApp() {
                           setStatus('Solana $T3x sync failed: ' + (err.message || 'see console'));
                         }
                       }}
-                      className="text-[10px] underline text-emerald-300 hover:text-emerald-400"
+                      className="self-start shrink-0 text-[10px] underline text-emerald-300 hover:text-emerald-400"
                     >
                       force sync
                     </button>
@@ -1488,7 +1497,7 @@ export default function MTWalletApp() {
                   ) : null}
                   <div className="text-[10px] text-zinc-500 mt-1">SOL addr: <button onClick={() => copy(solAddress)} className="underline decoration-dotted">{shortAddr(solAddress)}</button></div>
                 </div>
-                <div className="rounded-3xl bg-zinc-950 border border-zinc-800 p-6">
+                <div className="rounded-3xl bg-zinc-950 border border-zinc-800 p-5 sm:p-6">
                   <div className="text-xs text-zinc-400">SOL (for bridging / fees / swap gas)</div>
                   <div className="text-4xl font-semibold tabular-nums mt-1">{solSOLBalance.toFixed(4)}</div>
                   <div className="text-xs text-zinc-500">Solana mainnet • {shortAddr(solAddress)}</div>
@@ -1502,19 +1511,19 @@ export default function MTWalletApp() {
             </div>
 
             {/* Quick actions */}
-            <div className="flex flex-wrap gap-3">
-              <button onClick={() => setShowSendModal(true)} className="px-6 py-3 bg-white text-black rounded-2xl font-semibold flex items-center gap-2 text-sm active:scale-[0.985]"><Send className="w-4 h-4" /> SEND T3x</button>
-              <button onClick={() => { setActiveTab('send-receive'); setShowReceiveModal(true); }} className="px-6 py-3 border border-zinc-700 rounded-2xl font-semibold flex items-center gap-2 text-sm"><QrCode className="w-4 h-4" /> SHOW QR / ADDRESS</button>
-              <button onClick={() => setShowMintModal(true)} className="px-6 py-3 border border-emerald-800 hover:bg-emerald-950 text-emerald-400 rounded-2xl font-semibold flex items-center gap-2 text-sm"><Plus className="w-4 h-4" /> MINT NFT ON T3x</button>
-              <button onClick={refreshAll} className="px-5 py-3 text-sm border border-zinc-800 rounded-2xl flex items-center gap-2 hover:bg-zinc-950"><RefreshCw className="w-4 h-4" /> SYNC ALL</button>
+            <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3">
+              <button onClick={() => setShowSendModal(true)} className="px-4 py-3 bg-white text-black rounded-2xl font-semibold flex items-center justify-center gap-2 text-sm active:scale-[0.985]"><Send className="w-4 h-4" /> SEND T3x</button>
+              <button onClick={() => { setActiveTab('send-receive'); setShowReceiveModal(true); }} className="px-4 py-3 border border-zinc-700 rounded-2xl font-semibold flex items-center justify-center gap-2 text-sm"><QrCode className="w-4 h-4" /> SHOW QR / ADDRESS</button>
+              <button onClick={() => setShowMintModal(true)} className="px-4 py-3 border border-emerald-800 hover:bg-emerald-950 text-emerald-400 rounded-2xl font-semibold flex items-center justify-center gap-2 text-sm"><Plus className="w-4 h-4" /> MINT NFT ON T3x</button>
+              <button onClick={refreshAll} className="px-4 py-3 text-sm border border-zinc-800 rounded-2xl flex items-center justify-center gap-2 hover:bg-zinc-950"><RefreshCw className="w-4 h-4" /> SYNC ALL</button>
             </div>
 
             {/* Wallets manager - supports both logged in (with cloud) and guest local */}
             {(isLoggedIn || isUnlocked) && (
-              <div className="mt-6 bg-zinc-950 border border-zinc-800 rounded-3xl p-6">
-                <div className="flex items-center justify-between mb-3">
+              <div className="mt-6 bg-zinc-950 border border-zinc-800 rounded-3xl p-4 sm:p-6">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-3">
                   <div className="font-semibold">Your Wallets</div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <button 
                       onClick={isLoggedIn ? handleCreateAccountWallet : () => { /* for guest, user can use initial guest create */ setStatus('For additional local wallets, lock and use guest create, or activate one first.'); }} 
                       className="text-xs px-3 py-1.5 rounded-xl border border-emerald-800 text-emerald-400">+ Personal
@@ -1540,7 +1549,7 @@ export default function MTWalletApp() {
                         <div 
                           key={w.id} 
                           onClick={() => activateWalletEntry(w)}
-                          className={`flex justify-between items-center p-3 rounded-2xl border cursor-pointer hover:bg-zinc-900/50 ${activeWalletId === w.id ? 'border-emerald-500 bg-emerald-950/20' : 'border-zinc-800'}`}
+                          className={`flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center p-3 rounded-2xl border cursor-pointer hover:bg-zinc-900/50 ${activeWalletId === w.id ? 'border-emerald-500 bg-emerald-950/20' : 'border-zinc-800'}`}
                           style={{ borderLeft: `4px solid ${accent}` }}
                         >
                           <div className="min-w-0 flex-1">
@@ -1591,7 +1600,7 @@ export default function MTWalletApp() {
                               );
                             })()}
                           </div>
-                          <div className="flex gap-1 items-center flex-shrink-0" onClick={e => e.stopPropagation()}>
+                          <div className="flex flex-wrap gap-1 items-center" onClick={e => e.stopPropagation()}>
                             <button onClick={() => activateWalletEntry(w)} className="text-xs px-2.5 py-0.5 rounded bg-emerald-500 text-black">ACTIVATE</button>
                             <button 
                               onClick={() => {
@@ -1632,7 +1641,7 @@ export default function MTWalletApp() {
               <div className="text-sm text-zinc-400 mt-1">In-wallet Jupiter for the legacy Solana $T3x (SPL). Use to prepare for bridge to native T3x on our chain. Primary $T3x lives on the T3x network.</div>
             </div>
 
-            <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-6 space-y-5">
+            <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-5 sm:p-6 space-y-5">
               {/* From */}
               <div>
                 <div className="flex justify-between text-xs text-zinc-400 mb-1">
@@ -1745,7 +1754,7 @@ export default function MTWalletApp() {
         {activeTab === 'send-receive' && (
           <div className="grid md:grid-cols-2 gap-6">
             {/* Send card */}
-            <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-8">
+            <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-5 sm:p-8">
               <div className="flex items-center gap-3 text-emerald-400 mb-6">
                 <ArrowUpRight className="w-5 h-5" />
                 <div className="font-semibold tracking-wide">SEND NATIVE $T3x</div>
@@ -1781,7 +1790,7 @@ export default function MTWalletApp() {
             </div>
 
             {/* Receive */}
-            <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-8 flex flex-col">
+            <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-5 sm:p-8 flex flex-col">
               <div className="flex items-center gap-3 text-emerald-400 mb-6">
                 <ArrowDownLeft className="w-5 h-5" />
                 <div className="font-semibold tracking-wide">RECEIVE</div>
@@ -1810,9 +1819,9 @@ export default function MTWalletApp() {
         {/* NFTs */}
         {activeTab === 'nfts' && (
           <div>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
               <div className="font-semibold text-xl">Your On-Chain NFTs</div>
-              <button onClick={() => setShowMintModal(true)} className="px-5 py-2 rounded-2xl bg-emerald-500 text-black text-sm font-semibold flex items-center gap-2"><Plus className="w-4 h-4" /> MINT NEW NFT</button>
+              <button onClick={() => setShowMintModal(true)} className="px-5 py-2 rounded-2xl bg-emerald-500 text-black text-sm font-semibold flex items-center justify-center gap-2"><Plus className="w-4 h-4" /> MINT NEW NFT</button>
             </div>
             {nfts.length === 0 ? (
               <div className="text-center py-20 text-zinc-400 border border-dashed border-zinc-800 rounded-3xl">No NFTs yet. Mint your first companion or game asset above — stored forever on the T3x chain.</div>
@@ -1883,7 +1892,7 @@ export default function MTWalletApp() {
             ) : (
               <div className="space-y-2 font-mono text-sm">
                 {txs.map((tx, idx) => (
-                  <div key={idx} className="flex justify-between bg-zinc-950 border border-zinc-800 px-5 py-3 rounded-2xl">
+                  <div key={idx} className="flex flex-col gap-2 sm:flex-row sm:justify-between bg-zinc-950 border border-zinc-800 px-4 sm:px-5 py-3 rounded-2xl">
                     <div className="flex gap-4 items-center">
                       <div className="text-emerald-400 text-xs px-2 py-0.5 rounded bg-emerald-950">{tx.type || 'TRANSFER'}</div>
                       <div>{shortAddr(tx.from)} → {shortAddr(tx.to)}</div>
@@ -2110,7 +2119,7 @@ export default function MTWalletApp() {
           onClick={() => { setRevealedMnemonic(''); setRevealedWalletName(''); }}
         >
           <div 
-            className="bg-zinc-950 border border-amber-900 rounded-3xl p-8 max-w-lg w-full" 
+            className="bg-zinc-950 border border-amber-900 rounded-3xl p-5 sm:p-8 max-w-lg w-full max-h-[90vh] overflow-y-auto" 
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center gap-2 mb-2">
@@ -2193,7 +2202,7 @@ ${revealedMnemonic}
       <AnimatePresence>
         {showSendModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4" onClick={() => setShowSendModal(false)}>
-            <motion.div initial={{ opacity: 0, scale: 0.96, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.1 }} onClick={(e) => e.stopPropagation()} className="bg-zinc-950 border border-zinc-700 w-full max-w-md rounded-3xl p-8">
+            <motion.div initial={{ opacity: 0, scale: 0.96, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.1 }} onClick={(e) => e.stopPropagation()} className="bg-zinc-950 border border-zinc-700 w-full max-w-md rounded-3xl p-5 sm:p-8 max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between mb-6">
                 <div className="font-semibold">Send Native $T3x</div>
                 <button onClick={() => setShowSendModal(false)}><X /></button>
@@ -2213,7 +2222,7 @@ ${revealedMnemonic}
       <AnimatePresence>
         {showReceiveModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4" onClick={() => setShowReceiveModal(false)}>
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} onClick={e => e.stopPropagation()} className="bg-zinc-950 border border-zinc-700 rounded-3xl p-8 max-w-sm w-full text-center">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} onClick={e => e.stopPropagation()} className="bg-zinc-950 border border-zinc-700 rounded-3xl p-5 sm:p-8 max-w-sm w-full text-center max-h-[90vh] overflow-y-auto">
               <div className="font-semibold mb-4">Receive $T3x</div>
               {qrDataUrl && <img src={qrDataUrl} className="mx-auto mb-4 rounded-2xl border border-zinc-800 p-4 bg-black" alt="QR" />}
               <div onClick={() => copy(mtAddress)} className="font-mono text-xs break-all cursor-pointer hover:text-emerald-400 active:text-white">{mtAddress}</div>
@@ -2227,7 +2236,7 @@ ${revealedMnemonic}
       <AnimatePresence>
         {showMintModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4" onClick={() => setShowMintModal(false)}>
-            <motion.div initial={{ scale: 0.97, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} onClick={e => e.stopPropagation()} className="bg-zinc-950 border border-zinc-700 w-full max-w-md rounded-3xl p-8">
+            <motion.div initial={{ scale: 0.97, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} onClick={e => e.stopPropagation()} className="bg-zinc-950 border border-zinc-700 w-full max-w-md rounded-3xl p-5 sm:p-8 max-h-[90vh] overflow-y-auto">
               <div className="font-semibold mb-1">Mint NFT on T3x Chain</div>
               <div className="text-xs text-zinc-400 mb-5">Creates a real on-chain NFT owned by your wallet. No third-party marketplace or minting service.</div>
 
