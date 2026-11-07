@@ -1,5 +1,5 @@
 /**
- * INFINITE WALLET - Secure client-side wallet engine for T3x-ECO SYSTEM (developed by Futuret3ch)
+ * T3x Vault - Secure client-side wallet engine for T3x-ECO SYSTEM (developed by Futuret3ch)
  * - Zero third-party auth (local only)
  * - Keys NEVER leave the browser
  * - Compatible with mt-core (ed25519 + tweetnacl + bs58 + JSON tx)

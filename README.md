@@ -1,6 +1,6 @@
-# T3X Wallet
+# T3x Vault
 
-Production clone of the Infinite Wallet (from `Futuret3chdev/mt-ecosystem/infinite-wallet`).
+Production clone of the T3x Vault (from `Futuret3chdev/mt-ecosystem/infinite-wallet`).
 
 Original systems left completely untouched so you can always revert.
 
@@ -17,4 +17,4 @@ Built on the real security model:
 - Compatible with mt-core style node
 
 ## Source
-Copied from the production Infinite Wallet tree. Do not modify the original `mt-ecosystem` repo.
+Copied from the production T3x Vault tree. Do not modify the original `mt-ecosystem` repo.

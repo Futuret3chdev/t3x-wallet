@@ -256,7 +256,7 @@ export default function MTWalletApp() {
 
   // App state
   const [activeTab, setActiveTab] = useState('portfolio');
-  const [status, setStatus] = useState('T3X WALLET ready • FUTURET3CH • Self-custodial • Ultra-low fees');
+  const [status, setStatus] = useState('T3x Vault ready • FUTURET3CH • Self-custodial • Ultra-low fees');
   const [copied, setCopied] = useState('');
 
   // Balances
@@ -576,10 +576,10 @@ export default function MTWalletApp() {
     const tokenId = `mt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const metadata = {
       name: mintName.trim(),
-      description: mintDesignerText ? `Decorated: ${mintDesignerText}` : 'Minted via T3X WALLET • FUTURET3CH',
+      description: mintDesignerText ? `Decorated: ${mintDesignerText}` : 'Minted via T3x Vault • FUTURET3CH',
       image: mintImage || '', // data URL from upload or designer canvas (base64 image)
       attributes: [
-        { trait_type: 'Origin', value: 'T3X WALLET' },
+        { trait_type: 'Origin', value: 'T3x Vault' },
         mintDesignerText ? { trait_type: 'Designer Note', value: mintDesignerText } : null,
       ].filter(Boolean),
       created: new Date().toISOString(),
@@ -1042,7 +1042,7 @@ export default function MTWalletApp() {
         <div className="w-full max-w-md">
           <div className="flex flex-col items-center mb-8">
             <img src="/t3x-coin.png" alt="T3X" className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl shadow-2xl shadow-emerald-500/30 mb-4" />
-            <div className="text-3xl font-black tracking-[-1.5px]">T3X WALLET</div>
+            <div className="text-3xl font-black tracking-[-1.5px]">T3x Vault</div>
             <div className="text-emerald-400 text-sm tracking-[3px] mt-1 font-mono">T3X</div>
             <div className="text-[10px] text-zinc-500 mt-1 tracking-widest">DEVELOPED BY FUTURET3CH</div>
           </div>
@@ -1321,7 +1321,7 @@ export default function MTWalletApp() {
                 <img src="/t3x-coin.png" alt="T3X" className="w-10 h-10 rounded-xl" />
               </div>
               <div>
-                <div className="font-bold tracking-tight text-xl leading-none">T3X WALLET</div>
+                <div className="font-bold tracking-tight text-xl leading-none">T3x Vault</div>
                 <div className="text-[10px] text-emerald-400/90 -mt-0.5 font-mono tracking-[1px]">T3X</div>
               </div>
             </div>
@@ -1624,7 +1624,7 @@ export default function MTWalletApp() {
           </div>
         )}
 
-        {/* BUY / SELL - fully in-wallet (Jupiter powered but executed inside T3X WALLET) */}
+        {/* BUY / SELL - fully in-wallet (Jupiter powered but executed inside T3x Vault) */}
         {activeTab === 'trade' && (
           <div className="max-w-xl mx-auto">
             <div className="text-center mb-6">
@@ -2150,7 +2150,7 @@ export default function MTWalletApp() {
               <button 
                 onClick={() => {
                   const content = 
-`T3X Wallet Recovery Phrase
+`T3x Vault Recovery Phrase
 Wallet: ${revealedWalletName}
 Exported: ${new Date().toISOString().slice(0,10)}
 

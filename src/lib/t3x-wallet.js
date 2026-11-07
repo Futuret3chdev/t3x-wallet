@@ -1,5 +1,5 @@
 /**
- * T3X Wallet core — based on the production Infinite Wallet engine (mt-wallet.js)
+ * T3x Vault core — based on the production T3x Vault engine (mt-wallet.js)
  * Same security model: BIP39 + ed25519 + AES-GCM vault + local signing.
  * Extended with native T3X staking and user coin minting transaction types.
  */
