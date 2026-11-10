@@ -11,25 +11,49 @@ import * as bip39 from 'bip39';
 import nacl from 'tweetnacl';
 import bs58 from 'bs58';
 import { Buffer } from 'buffer';
+import {
+  assertJupiterSigningAllowed,
+  buildLoginRequest,
+  buildSignupRequest,
+  coerceServiceUrl,
+  demoAuthAllowed,
+  isLocalDevHost,
+  isSignInLocked,
+  resolveAuthTransport,
+} from '../../shared/security-policy.js';
 
-// T3x Node (local dev by default - later configurable / prod endpoint)
-// On Vercel/live we default to null (no public node), but user can set a custom one in Settings
-// (e.g. their deployed mt-core on Render/Railway, or localhost when testing locally).
-// NOTE: always use getMTNode() at call time so custom settings + VITE_MT_NODE_URL apply without reload.
-// The old MT_NODE const is kept for a few legacy references but getMTNode() is the source of truth.
-export const MT_NODE = (() => {
-  if (typeof window === 'undefined') return 'http://localhost:4000';
-  const local = localStorage.getItem('mt_custom_mt_node');
-  if (local) return local;
-  // Also respect build-time default here for the const
+function clientLockEnv() {
+  let flag;
   try {
-    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_MT_NODE_URL) {
-      return import.meta.env.VITE_MT_NODE_URL;
-    }
-  } catch (_) {}
-  if (window.location.hostname.includes('vercel.app')) return null;
-  return 'http://localhost:4000';
-})();
+    flag = import.meta.env?.VITE_SIGNIN_LOCK;
+  } catch {
+    flag = undefined;
+  }
+  return { VITE_SIGNIN_LOCK: flag };
+}
+
+export function signInIsLocked() {
+  return isSignInLocked(clientLockEnv());
+}
+
+function refuseIfSignInLocked(operation) {
+  if (!signInIsLocked()) return;
+  const error = new Error(`Sign-in is locked; ${operation} is disabled`);
+  error.code = 'SIGNIN_LOCKED';
+  throw error;
+}
+
+function currentHostname() {
+  if (typeof window === 'undefined' || !window.location) return '';
+  return window.location.hostname || '';
+}
+
+export function authMayUseDemoFallback(hostname = currentHostname()) {
+  return demoAuthAllowed(hostname);
+}
+
+// Always call getMTNode() / getAuthURL(). Remote http is rejected except localhost.
+export let MT_NODE = 'http://localhost:4000';
 
 export function getDefaultMTNode() {
   try {
@@ -51,111 +75,61 @@ export function getDefaultAuthURL() {
 
 export function getMTNode() {
   if (typeof window === 'undefined') return 'http://localhost:4000';
-  const fromEnv = getDefaultMTNode();
-  // Respect VITE_MT_NODE_URL even if relative (e.g. /api/mt for Vercel serverless proxy fallback)
-  // or http/https. This allows documented use of VITE=/api/mt (shows in UI, routes via vercel fn)
-  // while still defaulting to direct https subdomains on prod hosts when no VITE is set.
+  const fromEnv = coerceServiceUrl(getDefaultMTNode() || '');
   if (fromEnv) {
-    if (fromEnv.startsWith('/')) return fromEnv; // relative base like /api/mt
-    if (/^https?:\/\//i.test(fromEnv)) {
-      // Safety: never let T3x node point at the auth subdomain (common misconfig of VITE vars)
-      if (fromEnv.includes('auth.futuret3ch.com.au')) {
-        console.error('[mt-wallet] VITE_MT_NODE_URL is pointing at auth subdomain! Forcing correct api. Fix your Vercel env var.');
-        return 'https://api.futuret3ch.com.au';
-      }
-      return fromEnv;
+    if (fromEnv.includes('auth.futuret3ch.com.au')) {
+      console.error('[mt-wallet] VITE_MT_NODE_URL points at the auth host. Using the same-origin node proxy.');
+      return '/api/mt';
     }
-    // bare host? prefix http for safety
-    return 'http://' + fromEnv;
+    return fromEnv;
   }
-  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-  const isVercelOrCustom = hostname.includes('vercel.app') || hostname.endsWith('futuret3ch.com.au');
-  // On production (Vercel or our custom domains for the *wallet*), default to the co-located Vercel
-  // serverless proxy (/api/mt). This is the key for "sign in and everything works when launching
-  // the wallet from the marketing site". No separate api subdomain or mixed content issues.
-  // The /api/mt function (in this same Vercel project) forwards to your live mt-core.
-  // Override by setting VITE_MT_NODE_URL (full https://... or /api/mt) in Vercel, or use Settings/localStorage.
-  if (isVercelOrCustom) {
-    return '/api/mt'; // same-origin Vercel function proxy -> VPS mt-core (no mixed content, sign-in ready)
-  }
-  let local = localStorage.getItem('mt_custom_mt_node');
-  if (local) {
-    local = local.trim().replace(/\.+$/, '');
-    if (local && !/^https?:\/\//i.test(local)) {
-      local = 'http://' + local;
-    }
-    if (local !== localStorage.getItem('mt_custom_mt_node')) {
-      // clean up storage
-      localStorage.setItem('mt_custom_mt_node', local);
-    }
-    return local;
+  if (!isLocalDevHost(window.location.hostname)) return '/api/mt';
+  const stored = localStorage.getItem('mt_custom_mt_node') || '';
+  const custom = coerceServiceUrl(stored);
+  if (custom && !custom.startsWith('/')) {
+    if (custom !== stored) localStorage.setItem('mt_custom_mt_node', custom);
+    return custom;
   }
   return 'http://localhost:4000';
 }
 
 export function setMTNode(url) {
   if (typeof window === 'undefined') return;
-  let trimmed = (url || '').trim().replace(/\.+$/, ''); // strip trailing dots (common copy-paste error)
-  if (trimmed && !/^https?:\/\//i.test(trimmed)) {
-    trimmed = 'http://' + trimmed;
-  }
-  if (trimmed) {
-    localStorage.setItem('mt_custom_mt_node', trimmed);
-  } else {
-    localStorage.removeItem('mt_custom_mt_node');
-  }
+  const coerced = coerceServiceUrl(url || '');
+  if (coerced && !coerced.startsWith('/')) localStorage.setItem('mt_custom_mt_node', coerced);
+  else localStorage.removeItem('mt_custom_mt_node');
 }
 
 // Auth service (for email/phone accounts + cross-device encrypted wallet backup)
 // Supports custom URL via localStorage 'mt_custom_auth_url' (for local dev pointing to remote mt-auth)
 export function getAuthURL() {
   if (typeof window === 'undefined') return 'http://localhost:4001';
-  const fromEnv = getDefaultAuthURL();
-  // Respect VITE_AUTH_URL even if relative (e.g. /api/auth) or http/https.
+  const fromEnv = coerceServiceUrl(getDefaultAuthURL() || '');
   if (fromEnv) {
-    if (fromEnv.startsWith('/')) return fromEnv;
-    if (/^https?:\/\//i.test(fromEnv)) {
-      // Safety: never let auth URL point at the api (T3x) subdomain
-      if (fromEnv.includes('api.futuret3ch.com.au')) {
-        console.error('[mt-wallet] VITE_AUTH_URL is pointing at api subdomain! Forcing correct auth. Fix your Vercel env var.');
-        return 'https://auth.futuret3ch.com.au';
-      }
-      return fromEnv;
+    if (fromEnv.includes('api.futuret3ch.com.au')) {
+      console.error('[mt-wallet] VITE_AUTH_URL points at the node host. Using the same-origin auth proxy.');
+      return '/api/auth';
     }
-    return 'http://' + fromEnv;
+    return fromEnv;
   }
-  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-  const isVercelOrCustom = hostname.includes('vercel.app') || hostname.endsWith('futuret3ch.com.au');
-  // On production (Vercel or our custom domains for the *wallet*), default to the co-located Vercel
-  // serverless proxy (/api/auth). This makes email/phone sign-in (signup, login, verify, cross-device
-  // encrypted wallet restore) work immediately for visitors arriving from the marketing site links.
-  // Override via VITE_AUTH_URL=https://... in the Vercel infinite-wallet project (or localStorage in Settings).
-  if (isVercelOrCustom) {
-    return '/api/auth'; // same-origin Vercel function proxy -> VPS mt-auth (no mixed content, sign-in ready)
-  }
-  let local = localStorage.getItem('mt_custom_auth_url');
-  if (local) {
-    local = local.trim().replace(/\.+$/, '');
-    if (local) {
-      if (!/^https?:\/\//i.test(local)) local = 'http://' + local;
-      if (local !== localStorage.getItem('mt_custom_auth_url')) {
-        localStorage.setItem('mt_custom_auth_url', local);
-      }
-    }
-    return local;
+  if (!isLocalDevHost(window.location.hostname)) return '/api/auth';
+  const stored = localStorage.getItem('mt_custom_auth_url') || '';
+  const custom = coerceServiceUrl(stored);
+  if (custom && !custom.startsWith('/')) {
+    if (custom !== stored) localStorage.setItem('mt_custom_auth_url', custom);
+    return custom;
   }
   return 'http://localhost:4001';
 }
 
 export function setAuthURL(url) {
   if (typeof window === 'undefined') return;
-  let trimmed = (url || '').trim().replace(/\.+$/, ''); // strip trailing dots
-  if (trimmed) {
-    localStorage.setItem('mt_custom_auth_url', trimmed);
-  } else {
-    localStorage.removeItem('mt_custom_auth_url');
-  }
+  const coerced = coerceServiceUrl(url || '');
+  if (coerced && !coerced.startsWith('/')) localStorage.setItem('mt_custom_auth_url', coerced);
+  else localStorage.removeItem('mt_custom_auth_url');
 }
+
+MT_NODE = getMTNode();
 
 // Legacy const for any old references (uses getter)
 export const AUTH_URL = getAuthURL();
@@ -364,6 +338,7 @@ export async function fetchMTTxs(address) {
  * Submit signed T3x transaction
  */
 export async function submitMTTx(unsignedTx, signature) {
+  refuseIfSignInLocked('submit');
   let node = getMTNode();
   if (!node) throw new Error('Native T3x node not configured (demo mode)');
   node = node.replace(/\.+$/, '').replace(/\/+$/, '');
@@ -398,6 +373,10 @@ export async function submitMTTx(unsignedTx, signature) {
  * Gives the wallet 1000 T3x instantly so you can test sends, NFT mints, etc.
  */
 export async function requestTestFunds(address) {
+  refuseIfSignInLocked('faucet');
+  if (!isLocalDevHost(currentHostname())) {
+    throw new Error('Faucet is disabled on this host');
+  }
   if (!address) throw new Error('No address');
   let node = getMTNode();
   if (!node) throw new Error('Faucet only available when a T3x node is configured in Settings');
@@ -428,6 +407,7 @@ export async function requestTestFunds(address) {
  * Helper to build + sign + submit a transfer
  */
 export async function sendMT(fromWallet, toAddress, amount, currentNonce) {
+  refuseIfSignInLocked('send');
   if (!fromWallet || !fromWallet.secretKey) throw new Error('Wallet not unlocked');
   if (!toAddress || amount <= 0) throw new Error('Invalid send params');
 
@@ -458,27 +438,27 @@ import {
 } from '@solana/web3.js';
 import { getAssociatedTokenAddress, getAccount } from '@solana/spl-token';
 
-// Prioritized Solana mainnet RPCs for reliable $T3X (SPL) and SOL balance reads + swaps.
-// Exactly the ones the user provided (Helius first, then QuickNode, then public mainnet).
-// Custom RPC in Settings (or VITE_SOLANA_RPC_URL build-time default) overrides the entire list.
-// We intentionally avoid flaky public endpoints that can return ERR_CERT_AUTHORITY_INVALID.
-// Updated to ensure live site uses reliable paths for the funded wallet 63NQwG9Y...
-const SOLANA_RPCS = [
-  'https://mainnet.helius-rpc.com/?api-key=61a3cb76-ffd8-4dde-bb49-35cae29566c8', // Helius first (user's working key)
-  'https://billowing-multi-grass.solana-mainnet.quiknode.pro/aa4bc2cb96a4abb5cc363c8bbeec7f8ebde29dce', // user's QuickNode
-  'https://api.mainnet-beta.solana.com', // public last resort
-];
+// Solana reads go through the same-origin adapter. It stays disabled until
+// SOLANA_RPC_URL is set on the server. Provider URLs are not shipped in the client.
+function discardBrowserProviderSecrets() {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem('mt_moralis_api_key');
+    localStorage.removeItem('mt_custom_solana_rpc');
+  } catch {
+    // Private mode can reject storage. There is nothing to send either way.
+  }
+}
+discardBrowserProviderSecrets();
 
-// Domains known to cause ERR_CERT_AUTHORITY_INVALID in some browsers/networks.
-// We filter them out at runtime to prevent repeated failed requests and console spam.
-const BAD_RPC_DOMAINS = ['solana.public-rpc.com', 'public-rpc.com'];
+function sameOriginSolanaRpc() {
+  if (typeof window === 'undefined' || !window.location?.origin) return null;
+  return new URL('/api/solana-rpc', window.location.origin).href;
+}
 
 function getUsableRpcs() {
-  const custom = getCustomSolanaRpc();
-  if (custom) {
-    return [custom];
-  }
-  return SOLANA_RPCS.filter(rpc => !BAD_RPC_DOMAINS.some(bad => rpc.includes(bad)));
+  const adapter = sameOriginSolanaRpc();
+  return adapter ? [adapter] : [];
 }
 
 const SOL_MT_MINT = new PublicKey('ELywDcVX2WumHm4xEfqF8NdEKaeGCAaq9JmwtjE8pump');
@@ -500,15 +480,8 @@ export function clearSolanaBalanceCache() {
 
 export function getSolConnection() {
   const usable = getUsableRpcs();
-  const custom = getCustomSolanaRpc();
-  let rpc;
-  if (custom) {
-    rpc = custom;
-  } else {
-    // make sure index is within usable
-    const idx = Math.min(_currentRpcIndex, usable.length - 1);
-    rpc = usable[idx] || usable[0];
-  }
+  const rpc = usable[Math.min(_currentRpcIndex, Math.max(usable.length - 1, 0))] || usable[0];
+  if (!rpc) throw new Error('Solana RPC adapter is not available');
   if (!_solConnection || _solConnection.rpcEndpoint !== rpc) {
     _solConnection = new Connection(rpc, 'confirmed');
   }
@@ -516,100 +489,48 @@ export function getSolConnection() {
 }
 
 function switchToNextSolanaRpc() {
-  if (getCustomSolanaRpc()) {
-    // if user set custom (or VITE_SOLANA_RPC_URL default), don't auto-switch the list
-    return;
-  }
   const usable = getUsableRpcs();
+  if (usable.length === 0) return;
   _currentRpcIndex = (_currentRpcIndex + 1) % usable.length;
-  _solConnection = null; // force recreate
-  // Only log switch at warn level occasionally to avoid console spam
-  console.warn('Switched Solana RPC due to error, now using', usable[_currentRpcIndex]);
+  _solConnection = null;
 }
 
 export function getDefaultSolanaRpc() {
-  try {
-    if (typeof import.meta !== 'undefined' && import.meta.env) {
-      return import.meta.env.VITE_SOLANA_RPC_URL || null;
-    }
-  } catch (_) {}
   return null;
 }
 
 export function getCustomSolanaRpc() {
-  if (typeof window === 'undefined') return null;
-  const local = localStorage.getItem('mt_custom_solana_rpc');
-  if (local) return local;
-  return getDefaultSolanaRpc();
+  return null;
 }
 
-export function setCustomSolanaRpc(url) {
+export function setCustomSolanaRpc() {
   if (typeof window === 'undefined') return;
-  const trimmed = (url || '').trim();
-  if (trimmed) {
-    localStorage.setItem('mt_custom_solana_rpc', trimmed);
-  } else {
-    localStorage.removeItem('mt_custom_solana_rpc');
-  }
-  _solConnection = null; // force new connection on next use
+  localStorage.removeItem('mt_custom_solana_rpc');
+  _solConnection = null;
   _currentRpcIndex = 0;
 }
 
-// Moralis integration for reliable Solana $T3X balances and price (user's bot key works well)
-// 
-// The key can be provided in two ways:
-// 1. Build-time (recommended for live public site): set VITE_MORALIS_API_KEY env var on your hosting platform (Vercel etc).
-//    It gets baked into the client bundle (visible to anyone who inspects the JS — same exposure as before).
-// 2. Per-browser override: user pastes in Settings → saved to localStorage.
-//
-// getMoralisApiKey() always returns the effective key (local override wins, else the build-time default).
-// WARNING: exposing API key in client is not ideal for prod (rate limits, security). 
-// Prefer a backend proxy + your own endpoint for real production.
+// Moralis is reached only through /api/moralis. The browser never sees the key.
 export function getDefaultMoralisApiKey() {
-  try {
-    // Vite statically replaces import.meta.env.VITE_* at build time for the client bundle.
-    if (typeof import.meta !== 'undefined' && import.meta.env) {
-      const fromEnv = import.meta.env.VITE_MORALIS_API_KEY;
-      if (fromEnv) return fromEnv;
-    }
-  } catch (_) {}
-  // Hardcoded fallback using the user's working key so the live demo site always has reliable $T3X SPL balance
-  // (same key that makes the game display work). This is public in the bundle for demo purposes.
-  return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6Ijg0NGJkOGI0LTUxNzItNDkxNy05ZjY1LTkwMzUzOTQ3OWYwZiIsIm9yZ0lkIjoiNDY0NjAwIiwidXNlcklkIjoiNDc3OTc2IiwidHlwZUlkIjoiZGUyM2Y5NWYtMTgzOS00N2M2LTg0ZWEtNzUxMDM3YmYxMjMyIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3NTQ5Mzc4MzUsImV4cCI6NDkxMDY5NzgzNX0.ALS9nRVEt8sI2WWiSnSf7aj63McPfxDSTnrJXPEcS_A";
+  return null;
 }
 
 export function getMoralisApiKey() {
-  if (typeof window === 'undefined') return null;
-  const local = localStorage.getItem('mt_moralis_api_key');
-  if (local) return local;
-  return getDefaultMoralisApiKey();
+  return null;
 }
 
-export function setMoralisApiKey(key) {
+export function setMoralisApiKey() {
   if (typeof window === 'undefined') return;
-  const trimmed = (key || '').trim();
-  if (trimmed) {
-    localStorage.setItem('mt_moralis_api_key', trimmed);
-  } else {
-    localStorage.removeItem('mt_moralis_api_key');
-  }
+  localStorage.removeItem('mt_moralis_api_key');
 }
 
-const MORALIS_SOLANA_GATEWAY = 'https://solana-gateway.moralis.io';
-const MORALIS_DEEP_INDEX = 'https://deep-index.moralis.io/api/v2.2';
-
-export async function fetchSolanaMTBalanceMoralis(solanaPublicKeyStr, moralisKey) {
-  if (!moralisKey) return null;
+export async function fetchSolanaMTBalanceMoralis(solanaPublicKeyStr) {
+  if (typeof window === 'undefined' || !solanaPublicKeyStr) return null;
   try {
-    const url = `${MORALIS_SOLANA_GATEWAY}/account/mainnet/${solanaPublicKeyStr}/tokens?tokenAddresses=${SOL_MT_MINT.toBase58()}`;
-    const res = await fetch(url, {
-      headers: { 'Accept': 'application/json', 'X-Api-Key': moralisKey }
-    });
-    if (!res.ok) {
-      const text = await res.text();
-      console.warn('Moralis balance error', res.status, text);
-      return null;
-    }
+    const mint = SOL_MT_MINT.toBase58();
+    const url = `/api/moralis/account/mainnet/${encodeURIComponent(solanaPublicKeyStr)}/tokens?tokenAddresses=${encodeURIComponent(mint)}`;
+    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!res.ok) return null;
     const data = await res.json();
     if (Array.isArray(data) && data.length > 0) {
       const token = data[0];
@@ -626,13 +547,11 @@ export async function fetchSolanaMTBalanceMoralis(solanaPublicKeyStr, moralisKey
   }
 }
 
-export async function fetchTokenPriceMoralis(moralisKey) {
-  if (!moralisKey) return null;
+export async function fetchTokenPriceMoralis() {
+  if (typeof window === 'undefined') return null;
   try {
-    const url = `${MORALIS_SOLANA_GATEWAY}/token/mainnet/${SOL_MT_MINT.toBase58()}/price`;
-    const res = await fetch(url, {
-      headers: { 'Accept': 'application/json', 'X-Api-Key': moralisKey }
-    });
+    const url = `/api/moralis/token/mainnet/${encodeURIComponent(SOL_MT_MINT.toBase58())}/price`;
+    const res = await fetch(url, { headers: { Accept: 'application/json' } });
     if (!res.ok) return null;
     const data = await res.json();
     return {
@@ -653,14 +572,10 @@ export async function fetchSolanaMTBalance(solanaPublicKeyStr) {
     return cached.balance;
   }
 
-  const moralisKey = getMoralisApiKey();
-  if (moralisKey) {
-    const bal = await fetchSolanaMTBalanceMoralis(solanaPublicKeyStr, moralisKey);
-    if (bal !== null) {
-      _solBalanceCache.set(solanaPublicKeyStr, { balance: bal, ts: Date.now() });
-      return bal;
-    }
-    // fall through to RPC if Moralis failed
+  const moralisBalance = await fetchSolanaMTBalanceMoralis(solanaPublicKeyStr);
+  if (moralisBalance !== null) {
+    _solBalanceCache.set(solanaPublicKeyStr, { balance: moralisBalance, ts: Date.now() });
+    return moralisBalance;
   }
 
   // Try RPCs in priority order. Switch on ANY error (403, rate limit, cert issues, network, "failed to fetch", etc.)
@@ -771,13 +686,24 @@ const AUTH_TOKEN_KEY = 'mt_auth_token';
 const USER_PROFILE_KEY = 'mt_user_profile';
 const LOCAL_WALLETS_KEY = 'mt_local_wallets_v2'; // supports multiple
 
+export function isDemoSessionToken(token) {
+  return typeof token === 'string' && token.startsWith('demo_');
+}
+
 export function getAuthToken() {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem(AUTH_TOKEN_KEY);
+  const token = localStorage.getItem(AUTH_TOKEN_KEY);
+  if (isDemoSessionToken(token) && !authMayUseDemoFallback()) {
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    return null;
+  }
+  return token;
 }
 
 export function setAuthToken(token) {
-  if (token) localStorage.setItem(AUTH_TOKEN_KEY, token);
+  if (!token) return;
+  if (isDemoSessionToken(token) && !authMayUseDemoFallback()) return;
+  localStorage.setItem(AUTH_TOKEN_KEY, token);
 }
 
 export function clearAuth() {
@@ -855,19 +781,26 @@ async function authFetch(path, options = {}) {
     authBase = origin + authBase;
   }
 
-  if (!authBase) {
+  const transport = resolveAuthTransport(currentHostname(), Boolean(authBase));
+  if (transport === 'fail') {
+    throw new Error('Auth is unavailable');
+  }
+  if (transport === 'demo') {
     return getDemoAuthResponse(path, options);
   }
 
   try {
     const res = await fetch(`${authBase}${path}`, { ...options, headers });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || 'Auth request failed');
+    if (!res.ok) {
+      const error = new Error(data.error || 'Auth request failed');
+      error.status = res.status;
+      throw error;
+    }
     return data;
   } catch (e) {
-    // T3X wallet: remote auth backend is optional. On failure, fall back to local
-    // demo accounts so wallet creation (real keys, encrypted locally) still works.
-    console.warn('Auth backend unreachable, using local fallback:', e?.message || e);
+    if (transport !== 'remote-or-demo') throw e;
+    console.warn('Auth backend unreachable on localhost, using local demo auth');
     return getDemoAuthResponse(path, options);
   }
 }
@@ -936,13 +869,15 @@ function getDemoAuthResponse(path, options) {
 }
 
 export async function signup(email, phone, password) {
+  refuseIfSignInLocked('signup');
   return authFetch('/signup', {
     method: 'POST',
-    body: JSON.stringify({ email, phone, password }),
+    body: JSON.stringify(buildSignupRequest(email, phone, password)),
   });
 }
 
 export async function verifyAccount(email, code) {
+  refuseIfSignInLocked('verify');
   const data = await authFetch('/verify', {
     method: 'POST',
     body: JSON.stringify({ email, code }),
@@ -955,9 +890,10 @@ export async function verifyAccount(email, code) {
 }
 
 export async function login(emailOrPhone, password) {
+  refuseIfSignInLocked('login');
   const data = await authFetch('/login', {
     method: 'POST',
-    body: JSON.stringify({ emailOrPhone, password }),
+    body: JSON.stringify(buildLoginRequest(emailOrPhone, password)),
   });
   if (data.token) {
     setAuthToken(data.token);
@@ -967,6 +903,7 @@ export async function login(emailOrPhone, password) {
 }
 
 export async function getMe() {
+  refuseIfSignInLocked('profile');
   return authFetch('/me');
 }
 
@@ -997,7 +934,10 @@ export async function deleteBackedUpWallet(id) {
 
 /**
  * Create a new wallet (mnemonic) and optionally back it up.
- * password = the user's login password (used for client-side encryption)
+ * vaultPassphrase encrypts the mnemonic locally. It is not added to the auth request.
+ * Callers must pass a passphrase the user chose, not a copy of the account password
+ * taken from the login form. Older vaults still open with decryptMnemonic and the
+ * passphrase they were originally encrypted with. This function does not re-encrypt them.
  */
 export async function createNewWalletForAccount(name = 'Main Wallet', password, backupToCloud = true) {
   if (!password) throw new Error('Password required to encrypt new wallet');
@@ -1100,6 +1040,8 @@ export async function fetchJupiterSwapTransaction(quoteResponse, userPublicKey) 
 }
 
 export async function executeJupiterSwap(quoteResponse, wallet, connection = null) {
+  assertJupiterSigningAllowed();
+  refuseIfSignInLocked('swap-sign');
   if (!wallet || !wallet.solanaSeed) {
     throw new Error('No Solana key available in active wallet');
   }

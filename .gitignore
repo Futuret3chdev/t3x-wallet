@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.vercel/
+coverage/
+*.log
+.DS_Store
+
+# Local secrets. Commit .env.example only.
+.env
+.env.*
+!.env.example

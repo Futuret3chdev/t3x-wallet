@@ -2,8 +2,11 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
+import { SECURITY_HEADERS } from './shared/security-policy.js';
 
 export default defineConfig({
+  server: { headers: SECURITY_HEADERS },
+  preview: { headers: SECURITY_HEADERS },
   plugins: [
     react(),
     tailwindcss(),
