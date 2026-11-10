@@ -28,10 +28,8 @@ import {
   SOL_MINT,
   MT_SOLANA_MINT,
   fetchJupiterQuote,
-  executeJupiterSwap,
   getSolanaKeypair,
   clearSolanaBalanceCache,
-  getMoralisApiKey,
 
   // T3x node (native primary source) - locked official
   getMTNode,
@@ -57,6 +55,7 @@ import {
   saveLocalWallets,
   addOrUpdateLocalWallet,
   removeLocalWallet,
+  signInIsLocked,
 } from './lib/mt-wallet';
 
 const TABS = [
@@ -214,7 +213,8 @@ export default function MTWalletApp() {
   // === NEW: Email + Phone account system + multiple wallets per account ===
   const [accountEmail, setAccountEmail] = useState('');
   const [accountPhone, setAccountPhone] = useState('');
-  const [accountPassword, setAccountPassword] = useState(''); // used for login AND client-side encryption of all wallets
+  const [accountPassword, setAccountPassword] = useState(''); // sent only to the account server
+  const [vaultPassphrase, setVaultPassphrase] = useState(''); // client-only; never included in auth requests
   const [verifyCode, setVerifyCode] = useState('');
   const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup' | 'verify'
   const [isLoggedIn, setIsLoggedIn] = useState(!!getAuthToken());
@@ -382,10 +382,20 @@ export default function MTWalletApp() {
     }
   };
 
+  const signInLocked = signInIsLocked();
+  function denyLocked(label) {
+    if (!signInLocked) return false;
+    const msg = `${label} is disabled while sign-in is locked.`;
+    setAuthError(msg);
+    setStatus(msg);
+    return true;
+  }
+
   // Unlock existing vault
   const handleUnlock = async (e) => {
     e?.preventDefault();
     setAuthError('');
+    if (denyLocked('Unlock')) return;
     if (!password) {
       setAuthError('Password required');
       return;
@@ -410,6 +420,7 @@ export default function MTWalletApp() {
   const handleCreateWallet = async (e) => {
     e.preventDefault();
     setAuthError('');
+    if (denyLocked('Creating a wallet')) return;
     if (password.length < 6) {
       setAuthError('Password must be at least 6 characters');
       return;
@@ -452,6 +463,7 @@ export default function MTWalletApp() {
   const handleImportWallet = async (e) => {
     e.preventDefault();
     setAuthError('');
+    if (denyLocked('Importing a wallet')) return;
     const clean = importMnemonic.trim();
     if (!clean || clean.split(/\s+/).length < 12) {
       setAuthError('Enter a valid 12 or 24 word recovery phrase');
@@ -534,6 +546,7 @@ export default function MTWalletApp() {
   };
 
   const handleDeleteVault = () => {
+    if (denyLocked('Deleting a vault')) return;
     if (!confirm('Permanently delete encrypted vault from this browser? You will lose access unless you have your seed phrase backed up.')) return;
     deleteVault();
     handleLock();
@@ -543,6 +556,7 @@ export default function MTWalletApp() {
   // SEND TRANSACTION (native T3x)
   const handleSend = async (e) => {
     e?.preventDefault();
+    if (denyLocked('Sending')) return;
     if (!wallet || !sendTo || !sendAmount) return;
 
     setSending(true);
@@ -569,6 +583,7 @@ export default function MTWalletApp() {
 
   // MINT NFT (on T3x chain) - unique feature
   const handleMintNFT = async () => {
+    if (denyLocked('Minting')) return;
     if (!wallet || !mintName.trim()) return;
     setMinting(true);
     setStatus('Minting NFT on T3x chain...');
@@ -658,11 +673,12 @@ export default function MTWalletApp() {
 
   // === NEW HELPERS for multi-wallet + account auth ===
   async function activateWalletEntry(entry, pwd) {
+    if (denyLocked('Opening a wallet')) return;
     let passwordToUse = pwd;
     if (!entry || !entry.encryptedData) return;
 
     if (!passwordToUse) {
-      passwordToUse = window.prompt('Enter your account password to unlock this wallet:');
+      passwordToUse = window.prompt('Enter the vault passphrase for this wallet. It stays in this browser and is not sent to the server. Wallets saved earlier still open with the passphrase they were encrypted with.');
       if (!passwordToUse) return;
     }
 
@@ -727,12 +743,13 @@ export default function MTWalletApp() {
 
   // Reveal seed phrase for a specific wallet entry (requires password re-entry for security)
   async function revealSeedForEntry(entry) {
+    if (denyLocked('Revealing a recovery phrase')) return;
     const encrypted = entry?.encryptedData || entry?.encryptedPayload;
     if (!entry || !encrypted) {
       alert('No seed data available for this wallet.');
       return;
     }
-    const pwd = window.prompt(`Enter your password to reveal the recovery phrase for "${entry.name || 'this wallet'}":\n\nThis will show your 12/24 word seed. Never share it.`);
+    const pwd = window.prompt(`Enter the vault passphrase to reveal the recovery phrase for "${entry.name || 'this wallet'}".\n\nIt stays in this browser and is not sent to the server. This will show your 12/24 word seed. Never share it.`);
     if (!pwd) return;
     try {
       const { decryptMnemonic } = await import('./lib/mt-wallet');
@@ -749,6 +766,7 @@ export default function MTWalletApp() {
 
   // Import wallet in Settings (mnemonic from Phantom / other platforms)
   async function handleSettingsImportWallet() {
+    if (denyLocked('Importing a wallet')) return;
     const mnemonic = settingsImportMnemonic.trim();
     if (!mnemonic || mnemonic.split(/\s+/).length < 12) {
       alert('Please enter a valid 12 or 24 word recovery phrase');
@@ -866,45 +884,12 @@ export default function MTWalletApp() {
     };
   }
 
-  // Social login handler - uses real auth flow with demo social accounts for seamless experience.
-  // Creates on-the-fly demo accounts using the mt-auth backend so social sign-ins actually "work" with the existing cross-device system.
-  async function handleSocialSignIn(platform) {
-    setAuthError('');
-    setStatus(`Connecting to ${platform}...`);
-    const slug = platform.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const email = `social-${slug}@infinite.mt`;
-    const pass = 'social-login-demo-2026';
-    try {
-      let data;
-      try {
-        data = await login(email, pass);
-      } catch (loginErr) {
-        // New social account - signup then auto-verify with the demo code the backend returns
-        const fakePhone = `+1${Math.floor(100000000 + Math.random() * 900000000)}`;
-        const signupRes = await signup(email, fakePhone, pass);
-        if (signupRes && signupRes.demoVerificationCode) {
-          await verifyAccount(email, signupRes.demoVerificationCode);
-        }
-        data = await login(email, pass);
-      }
-      setIsLoggedIn(true);
-      setCurrentUser(data.user || { email, socialProvider: platform, name: `Demo ${platform} User` });
-      setMasterPassword(pass);
-      setStatus(`Signed in with ${platform}! Loading your wallets...`);
-      setGuestMode(false);
-      setShowSocialDrawer(false);
-      await loadMyWallets();
-    } catch (e) {
-      console.warn('Social auth flow issue, falling back to demo logged-in state:', e);
-      // Graceful demo fallback so the beautiful UI always "just works" even if mt-auth is in demo/offline mode
-      setIsLoggedIn(true);
-      setCurrentUser({ email, socialProvider: platform, name: `Demo ${platform} User` });
-      setMasterPassword(pass);
-      setMyWallets( (getLocalWallets() || []).map(normalizeWalletEntry) );
-      setStatus(`Connected via ${platform} (demo mode)`);
-      setGuestMode(false);
-      setShowSocialDrawer(false);
-    }
+  // Shared-password social login is disabled until a real OAuth provider exists.
+  async function handleSocialSignIn() {
+    setShowSocialDrawer(false);
+    if (denyLocked('Social login')) return;
+    setAuthError('Social login is disabled until a real OAuth provider is connected.');
+    setStatus('Social login is disabled.');
   }
 
   async function saveWalletCustomization(id, newName, newColor) {
@@ -946,10 +931,22 @@ export default function MTWalletApp() {
     setEditColor('#10b981');
   };
 
+  async function chooseVaultPassphrase() {
+    let pwd = masterPassword || vaultPassphrase;
+    if (!pwd && typeof window !== 'undefined') {
+      pwd = window.prompt('Enter a vault passphrase for this wallet. It stays in this browser and is not sent to the account server. Wallets saved earlier still open with the passphrase they were encrypted with.');
+    }
+    if (!pwd) return '';
+    setMasterPassword(pwd);
+    setVaultPassphrase('');
+    return pwd;
+  }
+
   async function handleCreateAccountWallet() {
-    const pwd = accountPassword || masterPassword;
+    if (denyLocked('Creating a wallet')) return;
+    const pwd = await chooseVaultPassphrase();
     if (!pwd) {
-      setAuthError('Set your account password first');
+      setAuthError('A vault passphrase you choose is required before a wallet can be created.');
       return;
     }
     try {
@@ -997,9 +994,10 @@ export default function MTWalletApp() {
   // Create special wallets (Couples / Business) with nice defaults and promoted features.
   // These are just named + colored + tagged wallets using the same secure flow.
   async function createSpecialWallet(type) {
-    const pwd = accountPassword || masterPassword;
-    if (!pwd && isLoggedIn) {
-      setAuthError('Account password required to create and backup special wallets');
+    if (denyLocked('Creating a wallet')) return;
+    const pwd = await chooseVaultPassphrase();
+    if (!pwd) {
+      setAuthError('Couples and Business wallets need a passphrase you choose. They stay disabled until then.');
       return;
     }
     const names = {
@@ -1016,7 +1014,7 @@ export default function MTWalletApp() {
       setStatus(`Creating ${name}...`);
       const { wallet: entry, encryptedPayload } = await (await import('./lib/mt-wallet')).createNewWalletForAccount(
         name,
-        pwd || 'guest-special',
+        pwd,
         !!getAuthToken()
       );
       const fullEntry = { ...entry, encryptedData: encryptedPayload, color, type };
@@ -1036,7 +1034,8 @@ export default function MTWalletApp() {
   }
 
   // ========== LOCKED / ACCOUNT + GUEST SCREEN ==========
-  if (!isLoggedIn && !isUnlocked) {
+  // The coming-soon lock stays up for the default build, including a stored session.
+  if (signInLocked || (!isLoggedIn && !isUnlocked)) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center p-4 sm:p-6 selection:bg-emerald-500 selection:text-black">
         <div className="w-full max-w-md">
@@ -1048,7 +1047,7 @@ export default function MTWalletApp() {
           </div>
 
           <div className="relative overflow-hidden rounded-3xl">
-            <div inert className="pointer-events-none select-none bg-zinc-950 border border-zinc-800 rounded-3xl p-5 sm:p-8 shadow-xl">
+            <div {...(signInLocked ? { inert: '' } : {})} className={`${signInLocked ? 'pointer-events-none select-none ' : ''}bg-zinc-950 border border-zinc-800 rounded-3xl p-5 sm:p-8 shadow-xl`}>
             {!guestMode ? (
               <>
                 {/* ACCOUNT MODE (email + phone for cross device) */}
@@ -1068,8 +1067,10 @@ export default function MTWalletApp() {
                     ].map((p) => (
                       <button
                         key={p.name}
+                        type="button"
+                        disabled={signInLocked}
                         onClick={() => handleSocialSignIn(p.name)}
-                        className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl border border-zinc-800 hover:border-zinc-700 active:scale-[0.985] transition-all"
+                        className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl border border-zinc-800 hover:border-zinc-700 active:scale-[0.985] transition-all disabled:opacity-60"
                         style={{ background: p.color + '15' }}
                       >
                         <span className="text-2xl">{p.emoji}</span>
@@ -1078,8 +1079,10 @@ export default function MTWalletApp() {
                     ))}
                   </div>
                   <button
-                    onClick={() => setShowSocialDrawer(true)}
-                    className="mt-3 w-full text-xs py-2.5 rounded-2xl border border-zinc-800 hover:bg-zinc-900 text-emerald-400/80 hover:text-emerald-400 flex items-center justify-center gap-2"
+                    type="button"
+                    disabled={signInLocked}
+                    onClick={() => { if (!signInLocked) setShowSocialDrawer(true); }}
+                    className="mt-3 w-full text-xs py-2.5 rounded-2xl border border-zinc-800 hover:bg-zinc-900 text-emerald-400/80 hover:text-emerald-400 flex items-center justify-center gap-2 disabled:opacity-60"
                   >
                     Browse 30+ more social platforms <span>→</span>
                   </button>
@@ -1090,20 +1093,23 @@ export default function MTWalletApp() {
                   <form onSubmit={async (e) => {
                     e.preventDefault();
                     setAuthError('');
+                    if (denyLocked('Sign-in')) return;
                     try {
                       const res = await login(accountEmail || accountPhone, accountPassword);
                       setIsLoggedIn(true);
                       setCurrentUser(res.user || getUserProfile());
-                      setMasterPassword(accountPassword);
+                      if (vaultPassphrase) setMasterPassword(vaultPassphrase);
                       setStatus('Logged in • Loading your wallets...');
                       await loadMyWallets();
                       setAccountPassword('');
+                      setVaultPassphrase('');
                     } catch (err) {
                       setAuthError(err.message || 'Login failed');
                     }
                   }} className="space-y-4">
                     <input type="text" placeholder="Email or Phone" value={accountEmail || accountPhone} onChange={(e) => { const v = e.target.value; if (v.includes('@')) setAccountEmail(v); else setAccountPhone(v); }} className="w-full bg-black border border-zinc-800 focus:border-emerald-500 rounded-2xl px-4 py-3 text-sm" required />
-                    <input type="password" autoComplete="current-password" placeholder="Password" value={accountPassword} onChange={(e) => setAccountPassword(e.target.value)} className="w-full bg-black border border-zinc-800 focus:border-emerald-500 rounded-2xl px-4 py-3 text-sm font-mono" required />
+                    <input type="password" autoComplete="current-password" placeholder="Account password" value={accountPassword} onChange={(e) => setAccountPassword(e.target.value)} className="w-full bg-black border border-zinc-800 focus:border-emerald-500 rounded-2xl px-4 py-3 text-sm font-mono" required />
+                    <input type="password" name="vault-passphrase" autoComplete="off" placeholder="Vault passphrase (stays on this device, not sent to the server)" value={vaultPassphrase} onChange={(e) => setVaultPassphrase(e.target.value)} className="w-full bg-black border border-zinc-800 focus:border-emerald-500 rounded-2xl px-4 py-3 text-sm font-mono" />
                     {authError && <div className="text-red-400 text-xs">{authError}</div>}
                     <button type="submit" className="w-full py-3.5 rounded-2xl bg-emerald-500 text-black font-bold text-sm tracking-wider mt-2">SIGN IN</button>
                     <div className="text-center text-xs">
@@ -1117,6 +1123,7 @@ export default function MTWalletApp() {
                   <form onSubmit={async (e) => {
                     e.preventDefault();
                     setAuthError('');
+                    if (denyLocked('Sign-up')) return;
                     if (!accountEmail || !accountPhone || accountPassword.length < 6) {
                       setAuthError('Email, phone and password (6+ chars) required');
                       return;
@@ -1132,7 +1139,8 @@ export default function MTWalletApp() {
                   }} className="space-y-4">
                     <input type="email" placeholder="Email address" value={accountEmail} onChange={(e) => setAccountEmail(e.target.value)} className="w-full bg-black border border-zinc-800 focus:border-emerald-500 rounded-2xl px-4 py-3 text-sm" required />
                     <input type="tel" placeholder="Phone number" value={accountPhone} onChange={(e) => setAccountPhone(e.target.value)} className="w-full bg-black border border-zinc-800 focus:border-emerald-500 rounded-2xl px-4 py-3 text-sm" required />
-                    <input type="password" autoComplete="new-password" placeholder="Password (min 6)" value={accountPassword} onChange={(e) => setAccountPassword(e.target.value)} className="w-full bg-black border border-zinc-800 focus:border-emerald-500 rounded-2xl px-4 py-3 text-sm font-mono" required />
+                    <input type="password" autoComplete="new-password" placeholder="Account password (min 6)" value={accountPassword} onChange={(e) => setAccountPassword(e.target.value)} className="w-full bg-black border border-zinc-800 focus:border-emerald-500 rounded-2xl px-4 py-3 text-sm font-mono" required />
+                    <input type="password" name="vault-passphrase" autoComplete="off" placeholder="Vault passphrase (stays on this device, not sent to the server)" value={vaultPassphrase} onChange={(e) => setVaultPassphrase(e.target.value)} className="w-full bg-black border border-zinc-800 focus:border-emerald-500 rounded-2xl px-4 py-3 text-sm font-mono" />
                     {authError && <div className="text-red-400 text-xs">{authError}</div>}
                     <button type="submit" className="w-full py-3.5 rounded-2xl bg-emerald-500 text-black font-bold text-sm tracking-wider">CREATE ACCOUNT</button>
                     <div className="text-center text-xs">
@@ -1146,11 +1154,14 @@ export default function MTWalletApp() {
                   <form onSubmit={async (e) => {
                     e.preventDefault();
                     setAuthError('');
+                    if (denyLocked('Verification')) return;
                     try {
                       const res = await verifyAccount(accountEmail, verifyCode);
                       setIsLoggedIn(true);
                       setCurrentUser(res.user);
-                      setMasterPassword(accountPassword);
+                      if (vaultPassphrase) setMasterPassword(vaultPassphrase);
+                      setVaultPassphrase('');
+                      setAccountPassword('');
                       setStatus('Verified! You can now create wallets.');
                       await loadMyWallets();
                     } catch (err) {
@@ -1216,8 +1227,7 @@ export default function MTWalletApp() {
                   <form onSubmit={async (e) => {
                     e.preventDefault();
                     setAuthError('');
-                    // For guest, we can unlock by setting a temp password and loading local wallets
-                    // Simple: just set isUnlocked and load from local
+                    if (denyLocked('Unlock')) return;
                     if (password) {
                       // Try to decrypt first wallet as test
                       const locals = getLocalWallets();
@@ -1244,7 +1254,7 @@ export default function MTWalletApp() {
               </>
             )}
             </div>
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/35 px-6 text-center backdrop-blur-[1px]">
+            {signInLocked && <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/35 px-6 text-center backdrop-blur-[1px]">
               <div className="max-w-xs rounded-3xl bg-black/55 px-5 py-6">
                 <div
                   className="text-3xl sm:text-4xl font-black tracking-[0.16em] text-transparent"
@@ -1257,7 +1267,7 @@ export default function MTWalletApp() {
                   Accounts, social login, and guest wallets stay locked until the vault is ready. There is nothing to enter for now.
                 </p>
               </div>
-            </div>
+            </div>}
           </div>
 
           <div className="text-center mt-6 text-[10px] text-zinc-500 font-mono tracking-widest">NO THIRD PARTIES • KEYS STAY LOCAL OR ENCRYPTED ON OUR SERVERS</div>
@@ -1265,7 +1275,7 @@ export default function MTWalletApp() {
 
         {/* SOCIAL SLIDE BAR / DRAWER - opens to many many social platforms. Full screen overlay, slides from right. */}
         <AnimatePresence>
-          {showSocialDrawer && (
+          {showSocialDrawer && !signInLocked && (
             <div className="fixed inset-0 z-[60] flex justify-end" onClick={() => setShowSocialDrawer(false)}>
               <motion.div
                 initial={{ x: '100%' }}
@@ -1279,7 +1289,7 @@ export default function MTWalletApp() {
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <div className="font-semibold text-lg">Sign in with social</div>
-                      <div className="text-xs text-zinc-500">30+ platforms supported • demo accounts created on the fly</div>
+                      <div className="text-xs text-zinc-500">Social login stays off until a real OAuth provider is connected</div>
                     </div>
                     <button onClick={() => setShowSocialDrawer(false)} className="text-xl leading-none text-zinc-400 hover:text-white">×</button>
                   </div>
@@ -1298,6 +1308,7 @@ export default function MTWalletApp() {
                     ).map((p) => (
                       <button
                         key={p.name}
+                        type="button"
                         onClick={() => handleSocialSignIn(p.name)}
                         className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-left active:scale-[0.99] transition"
                       >
@@ -1312,7 +1323,7 @@ export default function MTWalletApp() {
                   </div>
 
                   <div className="mt-6 text-[10px] text-center text-zinc-500">
-                    All social logins create/use demo accounts via our mt-auth system.<br />Real OAuth + profile import coming soon.
+                    Social login is disabled until a real OAuth provider is connected.
                   </div>
                 </div>
               </motion.div>
@@ -1450,6 +1461,7 @@ export default function MTWalletApp() {
                     })() && (
                       <button
                         onClick={async () => {
+                          if (denyLocked('Faucet')) return;
                           try {
                             setStatus('Requesting test T3x from node faucet...');
                             const r = await requestTestFunds(mtAddress);
@@ -1499,9 +1511,7 @@ export default function MTWalletApp() {
                   <div className="text-[10px] text-emerald-400/70 mt-1">
                     Legacy $T3x on Solana (SPL). Bridge to native $T3x on our chain for primary holdings. Use force sync if needed.
                   </div>
-                  {getMoralisApiKey() ? (
-                    <div className="mt-1 text-[10px] text-emerald-400/60">SPL balance via Moralis (reliable path).</div>
-                  ) : null}
+                  <div className="mt-1 text-[10px] text-zinc-500">Solana reads use the server adapter when it is configured.</div>
                   <div className="text-[10px] text-zinc-500 mt-1">SOL addr: <button onClick={() => copy(solAddress)} className="underline decoration-dotted">{shortAddr(solAddress)}</button></div>
                 </div>
                 <div className="rounded-3xl bg-zinc-950 border border-zinc-800 p-5 sm:p-6">
@@ -1701,6 +1711,7 @@ export default function MTWalletApp() {
                   onClick={async () => {
                     setSwapError('');
                     setSwapQuote(null);
+                    if (denyLocked('Quotes')) return;
                     if (!swapAmount || !wallet) {
                       setSwapError('Enter amount and activate a wallet with Solana keys');
                       return;
@@ -1725,28 +1736,15 @@ export default function MTWalletApp() {
                 </button>
 
                 <button 
-                  onClick={async () => {
-                    setSwapError('');
-                    if (!swapQuote || !wallet) return;
-
-                    setSwapping(true);
-                    try {
-                      const result = await executeJupiterSwap(swapQuote, wallet);
-
-                      setStatus(`Swap successful! Tx: ${result.signature.slice(0,8)}...`);
-                      setSwapQuote(null);
-                      setSwapAmount('');
-                      setTimeout(refreshAll, 1500);
-                    } catch (e) {
-                      setSwapError('Swap failed: ' + e.message);
-                    } finally {
-                      setSwapping(false);
-                    }
+                  type="button"
+                  onClick={() => {
+                    if (denyLocked('Swap signing')) return;
+                    setSwapError('Swap signing is disabled until the returned transaction bytes can be validated.');
                   }}
-                  disabled={!swapQuote || swapping}
+                  disabled
                   className="flex-1 py-3 rounded-2xl bg-emerald-500 text-black font-bold text-sm tracking-wider disabled:opacity-50"
                 >
-                  {swapping ? 'Swapping...' : 'Confirm Swap (in-wallet)'}
+                  Swap signing disabled
                 </button>
               </div>
 
@@ -1996,7 +1994,7 @@ export default function MTWalletApp() {
                       <input
                         value={devNodeOverride}
                         onChange={(e) => setDevNodeOverride(e.target.value)}
-                        placeholder="Override T3x node (e.g. http://161.97.106.182:4001 or https://api...)"
+                        placeholder="Override T3x node (https://api.example)"
                         className="bg-black border border-white/10 rounded-xl px-3 py-1.5 font-mono text-[10px] placeholder:text-zinc-500"
                       />
                       <input

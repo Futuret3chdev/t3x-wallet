@@ -12,7 +12,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node --test test/"
+    "test": "node --test test/*.js"
   },
   "dependencies": {
     "@solana/spl-token": "^0.4.14",
